@@ -419,8 +419,11 @@ Maria Souza	41988880000"></textarea>
       <div class="status" id="bulkStatus"></div>
     </div>
 
-    <div class="contact-list" id="contactList">
-      <div class="empty">Carregando contatos...</div>
+    <div style="margin-top:18px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <span class="empty" id="contactCount" style="padding:0;">Carregando contatos...</span>
+      <button class="secondary" id="toggleListBtn" onclick="toggleContactList()">Ver lista</button>
+    </div>
+    <div class="contact-list" id="contactList" style="display:none;">
     </div>
   </section>
 
@@ -760,26 +763,41 @@ async function saveMessages(){
 // ---------- Contatos ----------
 // IMPORTANTE: os nomes abaixo (Nome, Telefone) têm que bater exatamente
 // com o nome das colunas da tabela de Contatos no Baserow.
+let contactListVisible = false;
+
+function toggleContactList(){
+  contactListVisible = !contactListVisible;
+  document.getElementById('contactList').style.display = contactListVisible ? 'block' : 'none';
+  document.getElementById('toggleListBtn').textContent = contactListVisible ? 'Ocultar lista' : 'Ver lista';
+}
+
 async function loadContacts(){
   const cfg = getConfig();
-  const list = document.getElementById('contactList');
+  const countEl = document.getElementById('contactCount');
+  const toggleBtn = document.getElementById('toggleListBtn');
   if(!cfg.host || !cfg.token || !cfg.tableContacts){
-    list.innerHTML = '<button onclick="abrirConfigDoAvisoVazio()">Configurar conexão</button>';
+    countEl.innerHTML = '<button onclick="abrirConfigDoAvisoVazio()">Configurar conexão</button>';
+    toggleBtn.style.display = 'none';
     return;
   }
+  toggleBtn.style.display = 'inline-block';
   try{
     const res = await fetch(rowsUrl(cfg.tableContacts), { headers: apiHeaders() });
     const data = await res.json();
     renderContacts(data.results || []);
   }catch(e){
-    list.innerHTML = '<div class="empty">Não foi possível carregar os contatos.</div>';
+    countEl.textContent = 'Não foi possível carregar os contatos.';
   }
 }
 
 function renderContacts(rows){
+  const countEl = document.getElementById('contactCount');
   const list = document.getElementById('contactList');
+  countEl.textContent = rows.length === 0
+    ? 'Nenhum contato cadastrado ainda.'
+    : `${rows.length} contato${rows.length > 1 ? 's' : ''} cadastrado${rows.length > 1 ? 's' : ''}.`;
   if(rows.length === 0){
-    list.innerHTML = '<div class="empty">Nenhum contato cadastrado ainda.</div>';
+    list.innerHTML = '';
     return;
   }
   list.innerHTML = rows.map(r => `
@@ -999,7 +1017,10 @@ loadEvoConfigIntoInputs();
 loadLookerIntoInputs();
 initConectaLock();
 if(getConfig().host){ loadMessages(); loadContacts(); }
-else { document.getElementById('contactList').innerHTML = '<button onclick="abrirConfigDoAvisoVazio()">Configurar conexão</button>'; }
+else {
+  document.getElementById('contactCount').innerHTML = '<button onclick="abrirConfigDoAvisoVazio()">Configurar conexão</button>';
+  document.getElementById('toggleListBtn').style.display = 'none';
+}
 </script>
 
 </body>
