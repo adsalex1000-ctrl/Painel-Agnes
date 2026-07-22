@@ -488,10 +488,6 @@ Maria Souza	41988880000"></textarea>
 
 <script>
 // ---------- Tela de acesso ----------
-// A senha não fica em texto puro no código — é comparada por hash (SHA-256).
-// Para trocar a senha: abra o navegador, no console execute
-//   await crypto.subtle.digest('SHA-256', new TextEncoder().encode('novaSenha')).then(b => [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''))
-// e cole o resultado abaixo em SENHA_HASH.
 const SENHA_HASH = "37742e00d990d888da9804734e2d3260f45d3c0c401d4fdabdd89759581ff3c5"; // senha padrão: "agnes"
 
 async function sha256(text){
@@ -519,7 +515,6 @@ const CONFIG_SENHA_HASH = "f06dec93035d1e5882e9f195a0257a9bab1411d8eee427d3c61e5
 let configUnlocked = sessionStorage.getItem('agnes_config_unlocked') === '1';
 
 function handleConfigSummaryClick(event){
-  // controla manualmente a abertura do <details> pra poder pedir senha antes
   event.preventDefault();
   const details = document.getElementById('configDetails');
   const isOpen = details.hasAttribute('open');
@@ -552,7 +547,6 @@ async function unlockConfig(){
 }
 
 // ---------- Terceira senha: protege a área "Agnês conecta" ----------
-// Reaproveita a mesma senha "agnesadmin" (mesmo hash de CONFIG_SENHA_HASH)
 let conectaUnlocked = sessionStorage.getItem('agnes_conecta_unlocked') === '1';
 
 function initConectaLock(){
@@ -644,10 +638,14 @@ function rowsUrl(tableId, extra){
 }
 
 // ---------- Mensagens (assume 1 única linha de configuração na tabela) ----------
+// IMPORTANTE: os nomes abaixo (Saudação, Apresentação, Pergunta, Foto) têm que
+// ser EXATAMENTE iguais ao nome das colunas na tabela do Baserow, com acento
+// e maiúscula/minúscula certos — o Baserow ignora silenciosamente campos
+// que não batem exatamente com o nome da coluna.
 let msgRowId = null;
-let pendingImageFile = null; // arquivo local selecionado, ainda não subido
-let uploadedImage = null;    // {name: "..."} já subido no Baserow
-let existingImage = null;    // imagem já salva na linha (vinda do Baserow)
+let pendingImageFile = null;
+let uploadedImage = null;
+let existingImage = null;
 
 function previewImage(){
   const input = document.getElementById('msgImagem');
@@ -672,7 +670,7 @@ function removeImage(){
 }
 
 async function uploadImageIfNeeded(){
-  if(!pendingImageFile) return existingImage; // nada novo selecionado, mantém o que já tinha
+  if(!pendingImageFile) return existingImage;
   const cfg = getConfig();
   const form = new FormData();
   form.append('file', pendingImageFile);
@@ -697,12 +695,13 @@ async function loadMessages(){
     if(data.results && data.results.length > 0){
       const row = data.results[0];
       msgRowId = row.id;
-      document.getElementById('msgSaudacao').value = row.saudacao || '';
-      document.getElementById('msgApresentacao').value = row.apresentacao || '';
-      document.getElementById('msgPergunta').value = row.pergunta || '';
-      if(row.imagem && row.imagem.length > 0){
-        existingImage = { name: row.imagem[0].name };
-        document.getElementById('imgPreview').src = row.imagem[0].thumbnails ? row.imagem[0].thumbnails.card_cover.url : row.imagem[0].url;
+      document.getElementById('msgSaudacao').value = row['Saudação'] ?? row.saudacao ?? '';
+      document.getElementById('msgApresentacao').value = row['Apresentação'] ?? row.apresentacao ?? '';
+      document.getElementById('msgPergunta').value = row['Pergunta'] ?? row.pergunta ?? '';
+      const foto = row['Foto'] ?? row.imagem;
+      if(foto && foto.length > 0){
+        existingImage = { name: foto[0].name };
+        document.getElementById('imgPreview').src = foto[0].thumbnails ? foto[0].thumbnails.card_cover.url : foto[0].url;
         document.getElementById('imgPreviewWrap').style.display = 'block';
       }
     }
@@ -722,31 +721,23 @@ async function saveMessages(){
     const img = await uploadImageIfNeeded();
     if(img) imageField = [img];
   }catch(e){
-    setStatus('msgStatus', 'Erro ao enviar a imagem. Verifique se a tabela tem um campo de arquivo chamado "imagem".', true);
+    setStatus('msgStatus', 'Erro ao enviar a imagem. Verifique se a tabela tem um campo de arquivo chamado "Foto".', true);
     return;
   }
   const payload = {
-    saudacao: document.getElementById('msgSaudacao').value,
-    apresentacao: document.getElementById('msgApresentacao').value,
-    pergunta: document.getElementById('msgPergunta').value,
-    imagem: imageField
+    'Saudação': document.getElementById('msgSaudacao').value,
+    'Apresentação': document.getElementById('msgApresentacao').value,
+    'Pergunta': document.getElementById('msgPergunta').value,
+    'Foto': imageField
   };
   try{
     let res;
     if(msgRowId){
-      res = await fetch(rowsUrl(cfg.tableMsg) + `&item_id=${msgRowId}`.replace('&item_id=', ''), {
+      res = await fetch(`${cfg.host}/api/database/rows/table/${cfg.tableMsg}/${msgRowId}/?user_field_names=true`, {
         method: 'PATCH',
         headers: apiHeaders(),
         body: JSON.stringify(payload)
       });
-      // fallback: patch direct row endpoint
-      if(!res.ok){
-        res = await fetch(`${cfg.host}/api/database/rows/table/${cfg.tableMsg}/${msgRowId}/?user_field_names=true`, {
-          method: 'PATCH',
-          headers: apiHeaders(),
-          body: JSON.stringify(payload)
-        });
-      }
     } else {
       res = await fetch(rowsUrl(cfg.tableMsg), {
         method: 'POST',
@@ -759,7 +750,7 @@ async function saveMessages(){
     if(res.ok){
       setStatus('msgStatus', 'Mensagens salvas com sucesso.', false);
     } else {
-      setStatus('msgStatus', 'Erro ao salvar. Confira a configuração.', true);
+      setStatus('msgStatus', 'Erro ao salvar. Confira a configuração e os nomes das colunas.', true);
     }
   }catch(e){
     setStatus('msgStatus', 'Erro de conexão ao salvar.', true);
@@ -767,6 +758,8 @@ async function saveMessages(){
 }
 
 // ---------- Contatos ----------
+// IMPORTANTE: os nomes abaixo (Nome, Telefone) têm que bater exatamente
+// com o nome das colunas da tabela de Contatos no Baserow.
 async function loadContacts(){
   const cfg = getConfig();
   const list = document.getElementById('contactList');
@@ -791,7 +784,7 @@ function renderContacts(rows){
   }
   list.innerHTML = rows.map(r => `
     <div class="contact-row">
-      <div class="info"><b>${escapeHtml(r.nome || r.Nome || '')}</b><span>${escapeHtml(r.telefone || r.Telefone || '')}</span></div>
+      <div class="info"><b>${escapeHtml(r['Nome'] || r.nome || '')}</b><span>${escapeHtml(r['Telefone'] || r.telefone || '')}</span></div>
       <button class="del" onclick="deleteContact(${r.id})">Remover</button>
     </div>
   `).join('');
@@ -805,15 +798,15 @@ async function addContact(){
   }
   const nome = document.getElementById('contactName').value.trim();
   const telefone = document.getElementById('contactPhone').value.trim();
-  if(!nome || !telefone){
-    setStatus('contactStatus', 'Preencha nome e telefone.', true);
+  if(!telefone){
+    setStatus('contactStatus', 'Preencha o telefone.', true);
     return;
   }
   try{
     const res = await fetch(rowsUrl(cfg.tableContacts), {
       method: 'POST',
       headers: apiHeaders(),
-      body: JSON.stringify({ nome: nome, telefone: telefone })
+      body: JSON.stringify({ 'Nome': nome, 'Telefone': telefone })
     });
     if(res.ok){
       document.getElementById('contactName').value = '';
@@ -842,16 +835,19 @@ async function importBulk(){
   const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   const items = [];
   for(const line of lines){
-    // aceita separado por Tab (padrão ao colar de planilha) ou por vírgula
     let parts = line.split('\t');
     if(parts.length < 2) parts = line.split(',');
-    if(parts.length < 2) continue;
-    const nome = parts[0].trim();
-    const telefone = parts[1].trim();
-    if(nome && telefone) items.push({ nome: nome, telefone: telefone });
+    let nome = '', telefone = '';
+    if(parts.length < 2){
+      telefone = line.trim();
+    } else {
+      nome = parts[0].trim();
+      telefone = parts[1].trim();
+    }
+    if(telefone) items.push({ 'Nome': nome, 'Telefone': telefone });
   }
   if(items.length === 0){
-    setStatus('bulkStatus', 'Não consegui identificar nome e telefone nas linhas coladas.', true);
+    setStatus('bulkStatus', 'Não consegui identificar telefones nas linhas coladas.', true);
     return;
   }
   try{
@@ -920,7 +916,6 @@ async function gerarQrCode(){
   saveEvoConfig(cfg);
   setStatus('evoStatus', 'Gerando QR Code...', false);
   try{
-    // tenta criar a instância (se já existir, a própria API costuma retornar erro que podemos ignorar)
     await fetch(`${cfg.host}/instance/create`, {
       method: 'POST',
       headers: { 'apikey': cfg.key, 'Content-Type': 'application/json' },
@@ -966,7 +961,6 @@ async function verificarStatusEvo(){
   }
 }
 
-// pré-carrega os campos da Evolution API salvos anteriormente
 function loadEvoConfigIntoInputs(){
   document.getElementById('evoHost').value = localStorage.getItem('evo_host') || '';
   document.getElementById('evoKey').value = localStorage.getItem('evo_key') || '';
