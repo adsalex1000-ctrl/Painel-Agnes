@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGNÊS — Painel de Disparo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0613;
+    --bg-2: #120a20;
+    --panel: rgba(32, 20, 48, 0.55);
+    --panel-solid: #1a1030;
+    --line: rgba(255, 130, 220, 0.18);
+    --line-bright: rgba(255, 130, 220, 0.5);
+    --text: #f5eaff;
+    --muted: #9c8ab8;
+    --cyan: #ff5fc4;
+    --violet: #b98cff;
+    --magenta: #ff6ec7;
+    --danger: #ff5d7a;
+    --radius: 14px;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 700px 500px at 15% -5%, rgba(255,95,196,0.16), transparent 60%),
+      radial-gradient(ellipse 600px 500px at 105% 15%, rgba(185,140,255,0.16), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    padding: 32px 16px 100px;
+  }
+  .wrap{ max-width: 720px; margin: 0 auto; }
+
+  header{
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .orb{
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: radial-gradient(circle at 35% 30%, #ffe3fa, var(--cyan) 40%, var(--violet) 100%);
+    box-shadow: 0 0 18px 2px rgba(255,95,196,0.55), 0 0 40px 8px rgba(185,140,255,0.25);
+    animation: pulse 2.6s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ transform: scale(1); box-shadow: 0 0 18px 2px rgba(255,95,196,0.55), 0 0 40px 8px rgba(185,140,255,0.25); }
+    50%{ transform: scale(1.08); box-shadow: 0 0 26px 6px rgba(255,95,196,0.75), 0 0 55px 14px rgba(185,140,255,0.4); }
+  }
+  header h1{
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 2px;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, var(--cyan), var(--violet));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  header p{
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 0.3px;
+  }
+
+  details.config{
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+    padding: 4px 18px;
+  }
+  details.config summary{
+    cursor: pointer;
+    padding: 13px 0;
+    font-size: 13px;
+    color: var(--muted);
+    user-select: none;
+    letter-spacing: 0.3px;
+  }
+  .config-lock{
+    padding: 4px 0 18px;
+    display: flex;
+    gap: 8px;
+  }
+  .config-lock input{ flex: 1; }
+  .config-lock button{ flex-shrink: 0; }
+  .config-grid{
+    display: grid;
+    gap: 10px;
+    padding-bottom: 18px;
+  }
+  .config-grid label{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  section.card{
+    position: relative;
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  section.card::before{
+    content:"";
+    position:absolute; top:0; left:0; right:0; height:2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), var(--violet), transparent);
+    opacity: 0.7;
+  }
+  section.card h2{
+    font-family: 'Orbitron', sans-serif;
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin: 0 0 6px;
+    color: #d9e4ff;
+  }
+  section.card .sub{
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0 0 18px;
+  }
+
+  .field{ margin-bottom: 14px; }
+  .field label{
+    display:block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  input[type=text], input[type=tel], input[type=file], textarea{
+    width: 100%;
+    background: rgba(6, 9, 24, 0.6);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 9px;
+    padding: 11px 13px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, textarea:focus{
+    outline: none;
+    border-color: var(--line-bright);
+    box-shadow: 0 0 0 3px rgba(255,95,196,0.12);
+  }
+  textarea{ min-height: 64px; }
+
+  .row{
+    display: flex;
+    gap: 10px;
+  }
+  .row .field{ flex: 1; }
+
+  button{
+    background: linear-gradient(90deg, var(--cyan), var(--violet));
+    color: #170a1f;
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 11px 20px;
+    border-radius: 9px;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    box-shadow: 0 0 16px rgba(255,95,196,0.25);
+    transition: filter 0.15s, transform 0.1s;
+  }
+  button:hover{ filter: brightness(1.12); }
+  button:active{ transform: scale(0.98); }
+  button:disabled{ opacity: 0.5; cursor: default; }
+
+  button.secondary{
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    box-shadow: none;
+  }
+  button.secondary:hover{ border-color: var(--line-bright); color: var(--text); filter:none; }
+
+  .status{
+    font-size: 13px;
+    margin-top: 10px;
+    min-height: 18px;
+  }
+  .status.ok{ color: var(--cyan); }
+  .status.err{ color: var(--danger); }
+
+  .contact-list{
+    margin-top: 18px;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+  .contact-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .contact-row:last-child{ border-bottom: none; }
+  .contact-row .info b{ font-weight: 600; }
+  .contact-row .info span{ color: var(--muted); margin-left: 8px; }
+  .contact-row .del{
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--danger);
+    padding: 4px 10px;
+    font-size: 12px;
+    box-shadow: none;
+  }
+  .contact-row .del:hover{ border-color: var(--danger); filter:none; }
+
+  .empty{ color: var(--muted); font-size: 13px; padding: 8px 0; }
+
+  nav.tabs{
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .tab-btn{
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    box-shadow: none;
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+  .tab-btn:hover{ color: var(--text); border-color: var(--line-bright); filter:none; }
+  .tab-btn.active{
+    background: linear-gradient(90deg, rgba(255,95,196,0.18), rgba(185,140,255,0.18));
+    color: var(--text);
+    border-color: var(--line-bright);
+  }
+
+  details summary{ list-style: none; }
+  details summary::-webkit-details-marker{ display:none; }
+
+  /* Tela de acesso */
+  #lockScreen{
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 700px 500px at 15% -5%, rgba(255,95,196,0.16), transparent 60%),
+      radial-gradient(ellipse 600px 500px at 105% 15%, rgba(185,140,255,0.16), transparent 60%),
+      var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    padding: 20px;
+  }
+  #lockScreen.hidden{ display: none; }
+  .lock-box{
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 48px 40px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+  }
+  .lock-box .orb{ width: 72px; height: 72px; margin: 0 auto 22px; }
+  .lock-box h2{
+    font-family: 'Orbitron', sans-serif;
+    font-size: 30px;
+    letter-spacing: 3px;
+    margin: 0 0 10px;
+    background: linear-gradient(90deg, var(--cyan), var(--violet));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .lock-box p{ color: var(--muted); font-size: 15px; margin: 0 0 26px; }
+  .lock-box input{ margin-bottom: 16px; text-align: center; font-size: 16px; padding: 14px 16px; }
+  .lock-box button{ width: 100%; font-size: 15px; padding: 14px 20px; }
+  .lock-error{ color: var(--danger); font-size: 12px; margin-top: 10px; min-height: 16px; }
+</style>
+</head>
+<body>
+
+<div id="lockScreen">
+  <div class="lock-box">
+    <div class="orb"></div>
+    <h2>AGNÊS</h2>
+    <p>Digite a senha de acesso para entrar no painel.</p>
+    <input type="password" id="lockPassword" placeholder="Senha" onkeydown="if(event.key==='Enter') checkPassword()">
+    <button onclick="checkPassword()">Entrar</button>
+    <div class="lock-error" id="lockError"></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <div class="orb"></div>
+    <div>
+      <h1>AGNÊS</h1>
+      <p>Painel de disparo — mensagens e contatos.</p>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-panel="panelEnvia" onclick="switchPanel('panelEnvia', this)">Envia</button>
+    <button class="tab-btn" data-panel="panelConecta" onclick="switchPanel('panelConecta', this)">Conecta</button>
+    <button class="tab-btn" data-panel="panelEvolucao" onclick="switchPanel('panelEvolucao', this)">Evolução</button>
+  </nav>
+
+  <details class="config" id="configDetails">
+    <summary onclick="return handleConfigSummaryClick(event)">Configuração da conexão (protegida)</summary>
+
+    <div class="config-lock" id="configLock">
+      <input type="password" id="configPassInput" placeholder="Senha de configuração" onkeydown="if(event.key==='Enter') unlockConfig()">
+      <button onclick="unlockConfig()">Desbloquear</button>
+    </div>
+    <div class="lock-error" id="configLockError" style="margin-bottom:10px;"></div>
+
+    <div class="config-grid" id="configFields" style="display:none;">
+      <div>
+        <label>API DB (URL base — Baserow, NocoDB, etc.)</label>
+        <input type="text" id="cfgHost" placeholder="https://sua-api.exemplo.com">
+      </div>
+      <div>
+        <label>Token da API</label>
+        <input type="password" id="cfgToken" placeholder="Token xxxxxxxxxxxx">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>ID da tabela de Mensagens</label>
+          <input type="text" id="cfgTableMsg" placeholder="ex: 1234">
+        </div>
+        <div class="field">
+          <label>ID da tabela de Contatos</label>
+          <input type="text" id="cfgTableContacts" placeholder="ex: 1235">
+        </div>
+      </div>
+      <button class="secondary" onclick="saveConfig()">Salvar configuração</button>
+    </div>
+  </details>
+
+  <div class="panel" id="panelEnvia">
+
+  <section class="card">
+    <h2>Agnês envia</h2>
+    <p class="sub">4 envios em sequência, com intervalo entre eles: saudação, apresentação, pergunta e imagem.</p>
+
+    <div class="field">
+      <label>1. Saudação</label>
+      <textarea id="msgSaudacao" placeholder="Oi! Tudo bem?"></textarea>
+    </div>
+    <div class="field">
+      <label>2. Apresentação</label>
+      <textarea id="msgApresentacao" placeholder="Meu nome é..."></textarea>
+    </div>
+    <div class="field">
+      <label>3. Pergunta</label>
+      <textarea id="msgPergunta" placeholder="Você teria interesse em...?"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Imagem para enviar (opcional)</label>
+      <input type="file" id="msgImagem" accept="image/*" onchange="previewImage()">
+      <div id="imgPreviewWrap" style="margin-top:8px; display:none;">
+        <img id="imgPreview" style="max-width:160px; border-radius:8px; border:1px solid var(--line); display:block;">
+        <button class="secondary" style="margin-top:8px;" onclick="removeImage()">Remover imagem</button>
+      </div>
+    </div>
+
+    <button onclick="saveMessages()">Salvar mensagens</button>
+    <div class="status" id="msgStatus"></div>
+  </section>
+
+  <section class="card">
+    <h2>Contatos</h2>
+    <p class="sub">Adicione um contato, ou cole vários de uma vez copiando direto de uma planilha.</p>
+
+    <div class="row">
+      <div class="field">
+        <label>Nome</label>
+        <input type="text" id="contactName" placeholder="Nome do contato">
+      </div>
+      <div class="field">
+        <label>Telefone</label>
+        <input type="tel" id="contactPhone" placeholder="(41) 90000-0000">
+      </div>
+    </div>
+    <button onclick="addContact()">Adicionar contato</button>
+    <div class="status" id="contactStatus"></div>
+
+    <button style="margin-top:18px;" onclick="toggleBulk()" id="bulkToggleBtn">Colar vários contatos de uma vez</button>
+    <div id="bulkSection" style="display:none; margin-top:12px;">
+      <div class="field">
+        <label>Cole aqui (selecione as colunas Nome e Telefone na planilha e cole — funciona com Tab ou vírgula separando)</label>
+        <textarea id="bulkPaste" style="min-height:140px; font-family: monospace; font-size:13px;" placeholder="João Silva	41999990000
+Maria Souza	41988880000"></textarea>
+      </div>
+      <button onclick="importBulk()">Importar todos</button>
+      <div class="status" id="bulkStatus"></div>
+    </div>
+
+    <div class="contact-list" id="contactList">
+      <div class="empty">Carregando contatos...</div>
+    </div>
+  </section>
+
+  </div>
+
+  <div class="panel" id="panelConecta" style="display:none;">
+    <section class="card">
+      <h2>Agnês conecta</h2>
+      <p class="sub">Conecte o WhatsApp escaneando o QR Code gerado pela sua Evolution API.</p>
+
+      <div class="config-lock" id="conectaLock">
+        <input type="password" id="conectaPassInput" placeholder="Senha de segurança" onkeydown="if(event.key==='Enter') unlockConecta()">
+        <button onclick="unlockConecta()">Desbloquear</button>
+      </div>
+      <div class="lock-error" id="conectaLockError" style="margin-bottom:10px;"></div>
+
+      <div id="conectaFields" style="display:none;">
+      <div class="field">
+        <label>URL base da Evolution API</label>
+        <input type="text" id="evoHost" placeholder="https://sua-evolution-api.com">
+      </div>
+      <div class="field">
+        <label>API Key</label>
+        <input type="password" id="evoKey" placeholder="Sua API Key">
+      </div>
+      <div class="field">
+        <label>Nome da instância</label>
+        <input type="text" id="evoInstance" placeholder="ex: agnes">
+      </div>
+
+      <div class="row">
+        <button onclick="gerarQrCode()">Gerar QR Code</button>
+        <button class="secondary" onclick="verificarStatusEvo()">Verificar status</button>
+      </div>
+      <div class="status" id="evoStatus"></div>
+
+      <div id="qrWrap" style="display:none; margin-top:18px; text-align:center;">
+        <img id="qrImage" style="max-width:220px; border-radius:12px; border:1px solid var(--line); background:#fff; padding:10px;">
+        <p style="color:var(--muted); font-size:13px; margin-top:10px;">Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho, e escaneie.</p>
+      </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="panel" id="panelEvolucao" style="display:none;">
+    <section class="card">
+      <h2>Agnês evolução</h2>
+      <p class="sub">Acompanhamento da evolução das métricas, direto do dashboard.</p>
+
+      <div class="field">
+        <label>Link de incorporação do Looker Studio</label>
+        <input type="text" id="lookerUrl" placeholder="https://lookerstudio.google.com/embed/reporting/...">
+      </div>
+      <button class="secondary" onclick="salvarLooker()">Salvar link</button>
+      <div class="status" id="lookerStatus"></div>
+
+      <div id="lookerWrap" style="display:none; margin-top:16px;">
+        <iframe id="lookerFrame" style="width:100%; height:480px; border:1px solid var(--line); border-radius:12px;" allowfullscreen></iframe>
+      </div>
+      <div class="empty" id="lookerEmpty">Cole o link do relatório acima para exibir o gráfico aqui.</div>
+    </section>
+  </div>
+
+</div>
+
+<script>
+// ---------- Tela de acesso ----------
+// A senha não fica em texto puro no código — é comparada por hash (SHA-256).
+// Para trocar a senha: abra o navegador, no console execute
+//   await crypto.subtle.digest('SHA-256', new TextEncoder().encode('novaSenha')).then(b => [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''))
+// e cole o resultado abaixo em SENHA_HASH.
+const SENHA_HASH = "37742e00d990d888da9804734e2d3260f45d3c0c401d4fdabdd89759581ff3c5"; // senha padrão: "agnes"
+
+async function sha256(text){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkPassword(){
+  const val = document.getElementById('lockPassword').value;
+  const hash = await sha256(val);
+  if(hash === SENHA_HASH){
+    document.getElementById('lockScreen').classList.add('hidden');
+    sessionStorage.setItem('agnes_unlocked', '1');
+  } else {
+    document.getElementById('lockError').textContent = 'Senha incorreta.';
+  }
+}
+
+if(sessionStorage.getItem('agnes_unlocked') === '1'){
+  document.getElementById('lockScreen').classList.add('hidden');
+}
+
+// ---------- Segunda senha: protege a área de Configuração ----------
+const CONFIG_SENHA_HASH = "f06dec93035d1e5882e9f195a0257a9bab1411d8eee427d3c61e54c228d38901"; // senha padrão: "agnesadmin"
+let configUnlocked = sessionStorage.getItem('agnes_config_unlocked') === '1';
+
+function handleConfigSummaryClick(event){
+  // controla manualmente a abertura do <details> pra poder pedir senha antes
+  event.preventDefault();
+  const details = document.getElementById('configDetails');
+  const isOpen = details.hasAttribute('open');
+  if(isOpen){
+    details.removeAttribute('open');
+    return;
+  }
+  details.setAttribute('open', '');
+  if(configUnlocked){
+    document.getElementById('configLock').style.display = 'none';
+    document.getElementById('configFields').style.display = 'grid';
+  } else {
+    document.getElementById('configLock').style.display = 'flex';
+    document.getElementById('configFields').style.display = 'none';
+  }
+}
+
+async function unlockConfig(){
+  const val = document.getElementById('configPassInput').value;
+  const hash = await sha256(val);
+  if(hash === CONFIG_SENHA_HASH){
+    configUnlocked = true;
+    sessionStorage.setItem('agnes_config_unlocked', '1');
+    document.getElementById('configLock').style.display = 'none';
+    document.getElementById('configFields').style.display = 'grid';
+    document.getElementById('configLockError').textContent = '';
+  } else {
+    document.getElementById('configLockError').textContent = 'Senha incorreta.';
+  }
+}
+
+// ---------- Terceira senha: protege a área "Agnês conecta" ----------
+// Reaproveita a mesma senha "agnesadmin" (mesmo hash de CONFIG_SENHA_HASH)
+let conectaUnlocked = sessionStorage.getItem('agnes_conecta_unlocked') === '1';
+
+function initConectaLock(){
+  if(conectaUnlocked){
+    document.getElementById('conectaLock').style.display = 'none';
+    document.getElementById('conectaFields').style.display = 'block';
+  }
+}
+
+async function unlockConecta(){
+  const val = document.getElementById('conectaPassInput').value;
+  const hash = await sha256(val);
+  if(hash === CONFIG_SENHA_HASH){
+    conectaUnlocked = true;
+    sessionStorage.setItem('agnes_conecta_unlocked', '1');
+    document.getElementById('conectaLock').style.display = 'none';
+    document.getElementById('conectaFields').style.display = 'block';
+    document.getElementById('conectaLockError').textContent = '';
+  } else {
+    document.getElementById('conectaLockError').textContent = 'Senha incorreta.';
+  }
+}
+
+// ---------- Navegação entre painéis ----------
+function switchPanel(panelId, btn){
+  document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+  document.getElementById(panelId).style.display = 'block';
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function toggleBulk(){
+  const el = document.getElementById('bulkSection');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function abrirConfigDoAvisoVazio(){
+  const details = document.getElementById('configDetails');
+  details.setAttribute('open', '');
+  if(configUnlocked){
+    document.getElementById('configLock').style.display = 'none';
+    document.getElementById('configFields').style.display = 'grid';
+  } else {
+    document.getElementById('configLock').style.display = 'flex';
+    document.getElementById('configFields').style.display = 'none';
+  }
+  details.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ---------- Configuração ----------
+function getConfig(){
+  return {
+    host: localStorage.getItem('br_host') || '',
+    token: localStorage.getItem('br_token') || '',
+    tableMsg: localStorage.getItem('br_table_msg') || '',
+    tableContacts: localStorage.getItem('br_table_contacts') || ''
+  };
+}
+
+function loadConfigIntoInputs(){
+  const cfg = getConfig();
+  document.getElementById('cfgHost').value = cfg.host;
+  document.getElementById('cfgToken').value = cfg.token;
+  document.getElementById('cfgTableMsg').value = cfg.tableMsg;
+  document.getElementById('cfgTableContacts').value = cfg.tableContacts;
+}
+
+function saveConfig(){
+  localStorage.setItem('br_host', document.getElementById('cfgHost').value.trim());
+  localStorage.setItem('br_token', document.getElementById('cfgToken').value.trim());
+  localStorage.setItem('br_table_msg', document.getElementById('cfgTableMsg').value.trim());
+  localStorage.setItem('br_table_contacts', document.getElementById('cfgTableContacts').value.trim());
+  document.querySelector('details.config').removeAttribute('open');
+  loadMessages();
+  loadContacts();
+}
+
+function apiHeaders(){
+  const cfg = getConfig();
+  return {
+    'Authorization': 'Token ' + cfg.token,
+    'Content-Type': 'application/json'
+  };
+}
+
+function rowsUrl(tableId, extra){
+  const cfg = getConfig();
+  return `${cfg.host}/api/database/rows/table/${tableId}/?user_field_names=true${extra || ''}`;
+}
+
+// ---------- Mensagens (assume 1 única linha de configuração na tabela) ----------
+let msgRowId = null;
+let pendingImageFile = null; // arquivo local selecionado, ainda não subido
+let uploadedImage = null;    // {name: "..."} já subido no Baserow
+let existingImage = null;    // imagem já salva na linha (vinda do Baserow)
+
+function previewImage(){
+  const input = document.getElementById('msgImagem');
+  const file = input.files[0];
+  if(!file) return;
+  pendingImageFile = file;
+  uploadedImage = null;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('imgPreview').src = e.target.result;
+    document.getElementById('imgPreviewWrap').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage(){
+  pendingImageFile = null;
+  uploadedImage = null;
+  existingImage = null;
+  document.getElementById('msgImagem').value = '';
+  document.getElementById('imgPreviewWrap').style.display = 'none';
+}
+
+async function uploadImageIfNeeded(){
+  if(!pendingImageFile) return existingImage; // nada novo selecionado, mantém o que já tinha
+  const cfg = getConfig();
+  const form = new FormData();
+  form.append('file', pendingImageFile);
+  const res = await fetch(`${cfg.host}/api/user-files/upload-file/`, {
+    method: 'POST',
+    headers: { 'Authorization': 'Token ' + cfg.token },
+    body: form
+  });
+  if(!res.ok) throw new Error('Falha no upload da imagem');
+  const data = await res.json();
+  uploadedImage = { name: data.name };
+  pendingImageFile = null;
+  return uploadedImage;
+}
+
+async function loadMessages(){
+  const cfg = getConfig();
+  if(!cfg.host || !cfg.token || !cfg.tableMsg) return;
+  try{
+    const res = await fetch(rowsUrl(cfg.tableMsg, '&size=1'), { headers: apiHeaders() });
+    const data = await res.json();
+    if(data.results && data.results.length > 0){
+      const row = data.results[0];
+      msgRowId = row.id;
+      document.getElementById('msgSaudacao').value = row.saudacao || '';
+      document.getElementById('msgApresentacao').value = row.apresentacao || '';
+      document.getElementById('msgPergunta').value = row.pergunta || '';
+      if(row.imagem && row.imagem.length > 0){
+        existingImage = { name: row.imagem[0].name };
+        document.getElementById('imgPreview').src = row.imagem[0].thumbnails ? row.imagem[0].thumbnails.card_cover.url : row.imagem[0].url;
+        document.getElementById('imgPreviewWrap').style.display = 'block';
+      }
+    }
+  }catch(e){
+    setStatus('msgStatus', 'Não foi possível carregar as mensagens salvas.', true);
+  }
+}
+
+async function saveMessages(){
+  const cfg = getConfig();
+  if(!cfg.host || !cfg.token || !cfg.tableMsg){
+    setStatus('msgStatus', 'Preencha a configuração da conexão primeiro.', true);
+    return;
+  }
+  let imageField = existingImage ? [existingImage] : [];
+  try{
+    const img = await uploadImageIfNeeded();
+    if(img) imageField = [img];
+  }catch(e){
+    setStatus('msgStatus', 'Erro ao enviar a imagem. Verifique se a tabela tem um campo de arquivo chamado "imagem".', true);
+    return;
+  }
+  const payload = {
+    saudacao: document.getElementById('msgSaudacao').value,
+    apresentacao: document.getElementById('msgApresentacao').value,
+    pergunta: document.getElementById('msgPergunta').value,
+    imagem: imageField
+  };
+  try{
+    let res;
+    if(msgRowId){
+      res = await fetch(rowsUrl(cfg.tableMsg) + `&item_id=${msgRowId}`.replace('&item_id=', ''), {
+        method: 'PATCH',
+        headers: apiHeaders(),
+        body: JSON.stringify(payload)
+      });
+      // fallback: patch direct row endpoint
+      if(!res.ok){
+        res = await fetch(`${cfg.host}/api/database/rows/table/${cfg.tableMsg}/${msgRowId}/?user_field_names=true`, {
+          method: 'PATCH',
+          headers: apiHeaders(),
+          body: JSON.stringify(payload)
+        });
+      }
+    } else {
+      res = await fetch(rowsUrl(cfg.tableMsg), {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify(payload)
+      });
+      const created = await res.json();
+      if(created.id) msgRowId = created.id;
+    }
+    if(res.ok){
+      setStatus('msgStatus', 'Mensagens salvas com sucesso.', false);
+    } else {
+      setStatus('msgStatus', 'Erro ao salvar. Confira a configuração.', true);
+    }
+  }catch(e){
+    setStatus('msgStatus', 'Erro de conexão ao salvar.', true);
+  }
+}
+
+// ---------- Contatos ----------
+async function loadContacts(){
+  const cfg = getConfig();
+  const list = document.getElementById('contactList');
+  if(!cfg.host || !cfg.token || !cfg.tableContacts){
+    list.innerHTML = '<button onclick="abrirConfigDoAvisoVazio()">Configurar conexão</button>';
+    return;
+  }
+  try{
+    const res = await fetch(rowsUrl(cfg.tableContacts), { headers: apiHeaders() });
+    const data = await res.json();
+    renderContacts(data.results || []);
+  }catch(e){
+    list.innerHTML = '<div class="empty">Não foi possível carregar os contatos.</div>';
+  }
+}
+
+function renderContacts(rows){
+  const list = document.getElementById('contactList');
+  if(rows.length === 0){
+    list.innerHTML = '<div class="empty">Nenhum contato cadastrado ainda.</div>';
+    return;
+  }
+  list.innerHTML = rows.map(r => `
+    <div class="contact-row">
+      <div class="info"><b>${escapeHtml(r.nome || r.Nome || '')}</b><span>${escapeHtml(r.telefone || r.Telefone || '')}</span></div>
+      <button class="del" onclick="deleteContact(${r.id})">Remover</button>
+    </div>
+  `).join('');
+}
+
+async function addContact(){
+  const cfg = getConfig();
+  if(!cfg.host || !cfg.token || !cfg.tableContacts){
+    setStatus('contactStatus', 'Preencha a configuração da conexão primeiro.', true);
+    return;
+  }
+  const nome = document.getElementById('contactName').value.trim();
+  const telefone = document.getElementById('contactPhone').value.trim();
+  if(!nome || !telefone){
+    setStatus('contactStatus', 'Preencha nome e telefone.', true);
+    return;
+  }
+  try{
+    const res = await fetch(rowsUrl(cfg.tableContacts), {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify({ nome: nome, telefone: telefone })
+    });
+    if(res.ok){
+      document.getElementById('contactName').value = '';
+      document.getElementById('contactPhone').value = '';
+      setStatus('contactStatus', 'Contato adicionado.', false);
+      loadContacts();
+    } else {
+      setStatus('contactStatus', 'Erro ao adicionar. Confira os nomes das colunas na tabela.', true);
+    }
+  }catch(e){
+    setStatus('contactStatus', 'Erro de conexão ao adicionar.', true);
+  }
+}
+
+async function importBulk(){
+  const cfg = getConfig();
+  if(!cfg.host || !cfg.token || !cfg.tableContacts){
+    setStatus('bulkStatus', 'Preencha a configuração da conexão primeiro.', true);
+    return;
+  }
+  const raw = document.getElementById('bulkPaste').value.trim();
+  if(!raw){
+    setStatus('bulkStatus', 'Cole a lista de contatos primeiro.', true);
+    return;
+  }
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const items = [];
+  for(const line of lines){
+    // aceita separado por Tab (padrão ao colar de planilha) ou por vírgula
+    let parts = line.split('\t');
+    if(parts.length < 2) parts = line.split(',');
+    if(parts.length < 2) continue;
+    const nome = parts[0].trim();
+    const telefone = parts[1].trim();
+    if(nome && telefone) items.push({ nome: nome, telefone: telefone });
+  }
+  if(items.length === 0){
+    setStatus('bulkStatus', 'Não consegui identificar nome e telefone nas linhas coladas.', true);
+    return;
+  }
+  try{
+    const res = await fetch(`${cfg.host}/api/database/rows/table/${cfg.tableContacts}/batch/?user_field_names=true`, {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify({ items: items })
+    });
+    if(res.ok){
+      document.getElementById('bulkPaste').value = '';
+      setStatus('bulkStatus', `${items.length} contatos importados.`, false);
+      loadContacts();
+    } else {
+      setStatus('bulkStatus', 'Erro ao importar. Confira os nomes das colunas na tabela.', true);
+    }
+  }catch(e){
+    setStatus('bulkStatus', 'Erro de conexão ao importar.', true);
+  }
+}
+
+async function deleteContact(id){
+  const cfg = getConfig();
+  try{
+    const res = await fetch(`${cfg.host}/api/database/rows/table/${cfg.tableContacts}/${id}/`, {
+      method: 'DELETE',
+      headers: apiHeaders()
+    });
+    if(res.ok){ loadContacts(); }
+  }catch(e){}
+}
+
+function setStatus(elId, msg, isErr){
+  const el = document.getElementById(elId);
+  el.textContent = msg;
+  el.className = 'status ' + (isErr ? 'err' : 'ok');
+  setTimeout(() => { el.textContent = ''; }, 4000);
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+// ---------- Agnês conecta (Evolution API) ----------
+function getEvoConfig(){
+  return {
+    host: (document.getElementById('evoHost').value || localStorage.getItem('evo_host') || '').replace(/\/$/, ''),
+    key: document.getElementById('evoKey').value || localStorage.getItem('evo_key') || '',
+    instance: document.getElementById('evoInstance').value || localStorage.getItem('evo_instance') || ''
+  };
+}
+
+function saveEvoConfig(cfg){
+  localStorage.setItem('evo_host', cfg.host);
+  localStorage.setItem('evo_key', cfg.key);
+  localStorage.setItem('evo_instance', cfg.instance);
+}
+
+async function gerarQrCode(){
+  const cfg = getEvoConfig();
+  if(!cfg.host || !cfg.key || !cfg.instance){
+    setStatus('evoStatus', 'Preencha URL, API Key e nome da instância.', true);
+    return;
+  }
+  saveEvoConfig(cfg);
+  setStatus('evoStatus', 'Gerando QR Code...', false);
+  try{
+    // tenta criar a instância (se já existir, a própria API costuma retornar erro que podemos ignorar)
+    await fetch(`${cfg.host}/instance/create`, {
+      method: 'POST',
+      headers: { 'apikey': cfg.key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ instanceName: cfg.instance, qrcode: true })
+    }).catch(() => {});
+
+    const res = await fetch(`${cfg.host}/instance/connect/${cfg.instance}`, {
+      headers: { 'apikey': cfg.key }
+    });
+    const data = await res.json();
+    const base64 = data.base64 || (data.qrcode && data.qrcode.base64);
+    if(base64){
+      document.getElementById('qrImage').src = base64;
+      document.getElementById('qrWrap').style.display = 'block';
+      setStatus('evoStatus', 'Escaneie o QR Code abaixo.', false);
+    } else {
+      setStatus('evoStatus', 'Não veio um QR Code — a instância já pode estar conectada. Tente "Verificar status".', true);
+    }
+  }catch(e){
+    setStatus('evoStatus', 'Erro de conexão com a Evolution API. Confira a URL e a API Key.', true);
+  }
+}
+
+async function verificarStatusEvo(){
+  const cfg = getEvoConfig();
+  if(!cfg.host || !cfg.key || !cfg.instance){
+    setStatus('evoStatus', 'Preencha URL, API Key e nome da instância.', true);
+    return;
+  }
+  saveEvoConfig(cfg);
+  try{
+    const res = await fetch(`${cfg.host}/instance/connectionState/${cfg.instance}`, {
+      headers: { 'apikey': cfg.key }
+    });
+    const data = await res.json();
+    const state = data.instance ? data.instance.state : (data.state || 'desconhecido');
+    setStatus('evoStatus', `Status: ${state}`, state !== 'open');
+    if(state === 'open'){
+      document.getElementById('qrWrap').style.display = 'none';
+    }
+  }catch(e){
+    setStatus('evoStatus', 'Erro ao verificar status.', true);
+  }
+}
+
+// pré-carrega os campos da Evolution API salvos anteriormente
+function loadEvoConfigIntoInputs(){
+  document.getElementById('evoHost').value = localStorage.getItem('evo_host') || '';
+  document.getElementById('evoKey').value = localStorage.getItem('evo_key') || '';
+  document.getElementById('evoInstance').value = localStorage.getItem('evo_instance') || '';
+}
+
+// ---------- Agnês evolução (dashboard Looker Studio) ----------
+function salvarLooker(){
+  const url = document.getElementById('lookerUrl').value.trim();
+  if(!url){
+    setStatus('lookerStatus', 'Cole o link de incorporação do relatório.', true);
+    return;
+  }
+  localStorage.setItem('looker_url', url);
+  renderLooker(url);
+  setStatus('lookerStatus', 'Link salvo.', false);
+}
+
+function renderLooker(url){
+  document.getElementById('lookerFrame').src = url;
+  document.getElementById('lookerWrap').style.display = 'block';
+  document.getElementById('lookerEmpty').style.display = 'none';
+}
+
+function loadLookerIntoInputs(){
+  const saved = localStorage.getItem('looker_url');
+  if(saved){
+    document.getElementById('lookerUrl').value = saved;
+    renderLooker(saved);
+  }
+}
+
+// ---------- Init ----------
+loadConfigIntoInputs();
+loadEvoConfigIntoInputs();
+loadLookerIntoInputs();
+initConectaLock();
+if(getConfig().host){ loadMessages(); loadContacts(); }
+else { document.getElementById('contactList').innerHTML = '<button onclick="abrirConfigDoAvisoVazio()">Configurar conexão</button>'; }
+</script>
+
+</body>
+</html>
