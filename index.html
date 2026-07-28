@@ -650,18 +650,66 @@ let pendingImageFile = null;
 let uploadedImage = null;
 let existingImage = null;
 
-function previewImage(){
+// Reduz o tamanho da imagem (fotos de computador/câmera costumam vir muito
+// grandes, o que fazia o upload falhar em silêncio). Redimensiona para no
+// máximo 1600px no lado maior e comprime como JPEG.
+function compressImage(file, maxDim, quality){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; };
+    reader.onerror = reject;
+    img.onload = () => {
+      let { width, height } = img;
+      if(width > maxDim || height > maxDim){
+        if(width > height){
+          height = Math.round(height * (maxDim / width));
+          width = maxDim;
+        } else {
+          width = Math.round(width * (maxDim / height));
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => {
+        if(!blob){ reject(new Error('Falha ao comprimir imagem')); return; }
+        resolve(new File([blob], (file.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }));
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function previewImage(){
   const input = document.getElementById('msgImagem');
   const file = input.files[0];
   if(!file) return;
-  pendingImageFile = file;
   uploadedImage = null;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('imgPreview').src = e.target.result;
-    document.getElementById('imgPreviewWrap').style.display = 'block';
-  };
-  reader.readAsDataURL(file);
+  setStatus('msgStatus', 'Preparando imagem...', false);
+  try{
+    // sempre comprime — resolve o caso de fotos grandes vindas do computador
+    pendingImageFile = await compressImage(file, 1600, 0.82);
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('imgPreview').src = e.target.result;
+      document.getElementById('imgPreviewWrap').style.display = 'block';
+    };
+    reader.readAsDataURL(pendingImageFile);
+    setStatus('msgStatus', '', false);
+  }catch(e){
+    // se a compressão falhar por algum motivo, usa o arquivo original mesmo
+    pendingImageFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('imgPreview').src = e.target.result;
+      document.getElementById('imgPreviewWrap').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
 }
 
 function removeImage(){
@@ -682,7 +730,10 @@ async function uploadImageIfNeeded(){
     headers: { 'Authorization': 'Token ' + cfg.token },
     body: form
   });
-  if(!res.ok) throw new Error('Falha no upload da imagem');
+  if(!res.ok){
+    const detail = await res.text().catch(() => '');
+    throw new Error('Falha no upload da imagem: ' + detail);
+  }
   const data = await res.json();
   uploadedImage = { name: data.name };
   pendingImageFile = null;
@@ -808,6 +859,24 @@ function renderContacts(rows){
   `).join('');
 }
 
+// Padroniza qualquer formato de telefone colado (+55(41)9732-1367, (41)9732-1254,
+// 41 9732 1254, etc.) para o padrão 55DDDNUMERO usado pela Evolution API.
+function normalizePhone(raw){
+  let digits = String(raw || '').replace(/\D/g, ''); // deixa só números
+  if(!digits) return '';
+  if(digits.startsWith('0')) digits = digits.replace(/^0+/, ''); // remove zero de prefixo de operadora, se houver
+  // se já vier com 55 na frente e tiver DDD+número (12 ou 13 dígitos no total), mantém
+  if(digits.startsWith('55') && (digits.length === 12 || digits.length === 13)){
+    return digits;
+  }
+  // se vier só com DDD+número (10 ou 11 dígitos, sem o 55), adiciona o 55 na frente
+  if(digits.length === 10 || digits.length === 11){
+    return '55' + digits;
+  }
+  // qualquer outro caso (já tem 55 mas tamanho fora do padrão, etc.) retorna como veio, só com dígitos
+  return digits;
+}
+
 async function addContact(){
   const cfg = getConfig();
   if(!cfg.host || !cfg.token || !cfg.tableContacts){
@@ -815,9 +884,10 @@ async function addContact(){
     return;
   }
   const nome = document.getElementById('contactName').value.trim();
-  const telefone = document.getElementById('contactPhone').value.trim();
-  if(!telefone){
-    setStatus('contactStatus', 'Preencha o telefone.', true);
+  const telefoneRaw = document.getElementById('contactPhone').value.trim();
+  const telefone = telefoneRaw ? normalizePhone(telefoneRaw) : '';
+  if(!nome && !telefone){
+    setStatus('contactStatus', 'Preencha ao menos o nome ou o telefone.', true);
     return;
   }
   try{
@@ -855,17 +925,24 @@ async function importBulk(){
   for(const line of lines){
     let parts = line.split('\t');
     if(parts.length < 2) parts = line.split(',');
-    let nome = '', telefone = '';
+    let nome = '', telefoneRaw = '';
     if(parts.length < 2){
-      telefone = line.trim();
+      // só uma coluna: decide se é telefone (maioria de dígitos) ou nome
+      const soDigitos = line.replace(/\D/g, '');
+      if(soDigitos.length >= 8 && soDigitos.length >= line.replace(/\s/g, '').length * 0.6){
+        telefoneRaw = line.trim();
+      } else {
+        nome = line.trim();
+      }
     } else {
       nome = parts[0].trim();
-      telefone = parts[1].trim();
+      telefoneRaw = parts[1].trim();
     }
-    if(telefone) items.push({ 'Nome': nome, 'Telefone': telefone });
+    const telefone = telefoneRaw ? normalizePhone(telefoneRaw) : '';
+    if(nome || telefone) items.push({ 'Nome': nome, 'Telefone': telefone });
   }
   if(items.length === 0){
-    setStatus('bulkStatus', 'Não consegui identificar telefones nas linhas coladas.', true);
+    setStatus('bulkStatus', 'Não consegui identificar nomes ou telefones nas linhas coladas.', true);
     return;
   }
   try{
