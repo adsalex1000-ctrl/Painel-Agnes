@@ -853,7 +853,7 @@ function renderContacts(rows){
   }
   list.innerHTML = rows.map(r => `
     <div class="contact-row">
-      <div class="info"><b>${escapeHtml(r['Nome'] || r.nome || '')}</b><span>${escapeHtml(r['Telefone'] || r.telefone || '')}</span></div>
+      <div class="info"><b>${escapeHtml(r['Nomes'] || r['Nome'] || r.nome || '')}</b><span>${escapeHtml(r['Telefone'] || r.telefone || '')}</span></div>
       <button class="del" onclick="deleteContact(${r.id})">Remover</button>
     </div>
   `).join('');
@@ -919,6 +919,19 @@ function isNameLike(token){
   return digits.length < 8 && /[A-Za-zÀ-ÿ]/.test(token);
 }
 
+// Separa nome e telefone de uma linha mesmo quando foram digitados só com
+// espaço entre eles (sem Tab de verdade nem vírgula), tipo "Alexandre 41999998888".
+function splitNameAndPhone(str){
+  const texto = String(str || '').trim();
+  const match = texto.match(/(\+?\d[\d\s().-]{5,}\d)/);
+  if(match){
+    const telefoneRaw = match[0].trim();
+    const nome = (texto.slice(0, match.index) + ' ' + texto.slice(match.index + match[0].length)).trim();
+    return { nome, telefoneRaw };
+  }
+  return { nome: texto, telefoneRaw: '' };
+}
+
 async function importBulk(){
   const cfg = getConfig();
   if(!cfg.host || !cfg.token || !cfg.tableContacts){
@@ -943,6 +956,13 @@ async function importBulk(){
       continue;
     }
     const tokens = line.split(',').map(t => t.trim()).filter(t => t.length > 0);
+    // linha sem vírgula: pode ser só telefone, só nome, ou "Nome Telefone" digitado com espaço
+    if(tokens.length === 1){
+      const { nome, telefoneRaw } = splitNameAndPhone(tokens[0]);
+      const telefone = telefoneRaw ? normalizePhone(telefoneRaw) : '';
+      if(nome || telefone) items.push({ 'Nome': nome, 'Telefone': telefone });
+      continue;
+    }
     // linha com exatamente 2 pedaços, sendo o primeiro nome e o segundo telefone: trata como par
     if(tokens.length === 2 && isNameLike(tokens[0]) && isPhoneLike(tokens[1]) && !isPhoneLike(tokens[0])){
       items.push({ 'Nome': tokens[0], 'Telefone': normalizePhone(tokens[1]) });
@@ -960,19 +980,33 @@ async function importBulk(){
     setStatus('bulkStatus', 'Não consegui identificar nomes ou telefones nas linhas coladas.', true);
     return;
   }
+  // o Baserow limita quantas linhas aceita por chamada — divide em blocos de 100
+  const BLOCO = 100;
+  const blocos = [];
+  for(let i = 0; i < items.length; i += BLOCO){
+    blocos.push(items.slice(i, i + BLOCO));
+  }
   try{
-    const res = await fetch(`${cfg.host}/api/database/rows/table/${cfg.tableContacts}/batch/?user_field_names=true`, {
-      method: 'POST',
-      headers: apiHeaders(),
-      body: JSON.stringify({ items: items })
-    });
-    if(res.ok){
-      document.getElementById('bulkPaste').value = '';
-      setStatus('bulkStatus', `${items.length} contatos importados.`, false);
-      loadContacts();
-    } else {
-      setStatus('bulkStatus', 'Erro ao importar. Confira os nomes das colunas na tabela.', true);
+    let totalImportado = 0;
+    for(const bloco of blocos){
+      const res = await fetch(`${cfg.host}/api/database/rows/table/${cfg.tableContacts}/batch/?user_field_names=true`, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({ items: bloco })
+      });
+      if(res.ok){
+        totalImportado += bloco.length;
+      } else {
+        const detail = await res.text().catch(() => '');
+        setStatus('bulkStatus', `Importados ${totalImportado} de ${items.length} antes de um erro: ${detail.slice(0,180)}`, true);
+        loadContacts();
+        return;
+      }
     }
+    document.getElementById('bulkPaste').value = '';
+    setStatus('bulkStatus', `${totalImportado} contatos importados.`, false);
+    loadContacts();
+    return;
   }catch(e){
     setStatus('bulkStatus', 'Erro de conexão ao importar.', true);
   }
