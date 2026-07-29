@@ -366,6 +366,17 @@
     <p class="sub">4 envios em sequência, com intervalo entre eles: saudação, apresentação, pergunta e imagem.</p>
 
     <div class="field">
+      <label>Variação de mensagem (sorteada aleatoriamente no envio)</label>
+      <select id="msgVariant" onchange="onVariantChange()">
+        <option value="MENSAGEM 1">MENSAGEM 1</option>
+        <option value="MENSAGEM 2">MENSAGEM 2</option>
+        <option value="MENSAGEM 3">MENSAGEM 3</option>
+        <option value="MENSAGEM 4">MENSAGEM 4</option>
+        <option value="MENSAGEM 5">MENSAGEM 5</option>
+      </select>
+    </div>
+
+    <div class="field">
       <label>1. Saudação</label>
       <textarea id="msgSaudacao" placeholder="Oi! Tudo bem?"></textarea>
     </div>
@@ -383,6 +394,7 @@
       <input type="file" id="msgImagem" accept="image/*" onchange="previewImage()">
       <div id="imgPreviewWrap" style="margin-top:8px; display:none;">
         <img id="imgPreview" style="max-width:160px; border-radius:8px; border:1px solid var(--line); display:block;">
+
         <button class="secondary" style="margin-top:8px;" onclick="removeImage()">Remover imagem</button>
       </div>
     </div>
@@ -747,9 +759,16 @@ async function uploadImageIfNeeded(){
 async function loadMessages(){
   const cfg = getConfig();
   if(!cfg.host || !cfg.token || !cfg.tableMsg) return;
+  const variant = document.getElementById('msgVariant').value || 'MENSAGEM 1';
   try{
-    const res = await fetch(rowsUrl(cfg.tableMsg, '&size=1'), { headers: apiHeaders() });
+    const filtro = `&size=1&filter__Name__equal=${encodeURIComponent(variant)}`;
+    const res = await fetch(rowsUrl(cfg.tableMsg, filtro), { headers: apiHeaders() });
     const data = await res.json();
+    // limpa os campos antes de preencher (senão fica com o texto da variação anterior)
+    document.getElementById('msgSaudacao').value = '';
+    document.getElementById('msgApresentacao').value = '';
+    document.getElementById('msgPergunta').value = '';
+    removeImage();
     if(data.results && data.results.length > 0){
       const row = data.results[0];
       msgRowId = row.id;
@@ -762,10 +781,18 @@ async function loadMessages(){
         document.getElementById('imgPreview').src = foto[0].thumbnails ? foto[0].thumbnails.card_cover.url : foto[0].url;
         document.getElementById('imgPreviewWrap').style.display = 'block';
       }
+    } else {
+      // essa variação ainda não existe como linha na tabela — será criada ao salvar
+      msgRowId = null;
     }
   }catch(e){
     setStatus('msgStatus', 'Não foi possível carregar as mensagens salvas.', true);
   }
+}
+
+// chamado quando o usuário troca a variação no seletor
+function onVariantChange(){
+  loadMessages();
 }
 
 async function saveMessages(){
@@ -774,6 +801,7 @@ async function saveMessages(){
     setStatus('msgStatus', 'Preencha a configuração da conexão primeiro.', true);
     return;
   }
+  const variant = document.getElementById('msgVariant').value || 'MENSAGEM 1';
   let imageField = existingImage ? [existingImage] : [];
   try{
     const img = await uploadImageIfNeeded();
@@ -783,6 +811,7 @@ async function saveMessages(){
     return;
   }
   const payload = {
+    'Name': variant,
     'Saudação': document.getElementById('msgSaudacao').value,
     'Apresentação': document.getElementById('msgApresentacao').value,
     'Pergunta': document.getElementById('msgPergunta').value,
@@ -806,7 +835,7 @@ async function saveMessages(){
       if(created.id) msgRowId = created.id;
     }
     if(res.ok){
-      setStatus('msgStatus', 'Mensagens salvas com sucesso.', false);
+      setStatus('msgStatus', `${variant} salva com sucesso.`, false);
     } else {
       setStatus('msgStatus', 'Erro ao salvar. Confira a configuração e os nomes das colunas.', true);
     }
@@ -826,6 +855,26 @@ function toggleContactList(){
   document.getElementById('toggleListBtn').textContent = contactListVisible ? 'Ocultar lista' : 'Ver lista';
 }
 
+// Busca TODAS as páginas de uma tabela (a API do Baserow entrega os dados
+// divididos em páginas quando a tabela é grande — sem isso, só a primeira
+// página era considerada, deixando linhas vazias de fora da limpeza).
+async function fetchAllRows(tableId){
+  const cfg = getConfig();
+  const size = 200;
+  let page = 1;
+  let all = [];
+  while(true){
+    const res = await fetch(rowsUrl(tableId, `&size=${size}&page=${page}`), { headers: apiHeaders() });
+    if(!res.ok) break;
+    const data = await res.json();
+    const results = data.results || [];
+    all = all.concat(results);
+    if(results.length < size || !data.next) break;
+    page++;
+  }
+  return all;
+}
+
 async function loadContacts(){
   const cfg = getConfig();
   const countEl = document.getElementById('contactCount');
@@ -837,9 +886,8 @@ async function loadContacts(){
   }
   toggleBtn.style.display = 'inline-block';
   try{
-    const res = await fetch(rowsUrl(cfg.tableContacts), { headers: apiHeaders() });
-    const data = await res.json();
-    renderContacts(data.results || []);
+    const rows = await fetchAllRows(cfg.tableContacts);
+    renderContacts(rows);
   }catch(e){
     countEl.textContent = 'Não foi possível carregar os contatos.';
   }
@@ -873,18 +921,15 @@ async function limparContatosVazios(){
   if(!cfg.host || !cfg.token || !cfg.tableContacts) return;
   const btn = document.getElementById('cleanEmptyBtn');
   btn.disabled = true;
-  setStatus('cleanStatus', 'Procurando contatos vazios...', false);
+  setStatus('cleanStatus', 'Procurando contatos vazios em todas as páginas...', false);
   try{
-    const res = await fetch(rowsUrl(cfg.tableContacts), { headers: apiHeaders() });
-    const data = await res.json();
-    const rows = data.results || [];
+    const rows = await fetchAllRows(cfg.tableContacts);
     const vazios = rows.filter(r => !(r['Nomes'] || r['Nome'] || r.nome) && !(r['Telefone'] || r.telefone));
     if(vazios.length === 0){
       setStatus('cleanStatus', 'Nenhum contato vazio encontrado.', false);
       btn.disabled = false;
       return;
     }
-    setStatus('cleanStatus', `Removendo ${vazios.length} contatos vazios...`, false);
     let removidos = 0;
     for(const r of vazios){
       const del = await fetch(`${cfg.host}/api/database/rows/table/${cfg.tableContacts}/${r.id}/`, {
@@ -892,6 +937,9 @@ async function limparContatosVazios(){
         headers: apiHeaders()
       });
       if(del.ok) removidos++;
+      if(removidos % 20 === 0){
+        setStatus('cleanStatus', `Removendo... ${removidos}/${vazios.length}`, false);
+      }
     }
     setStatus('cleanStatus', `${removidos} contatos vazios removidos.`, false);
     loadContacts();
