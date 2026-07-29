@@ -421,8 +421,12 @@ Maria Souza	41988880000"></textarea>
 
     <div style="margin-top:18px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
       <span class="empty" id="contactCount" style="padding:0;">Carregando contatos...</span>
-      <button class="secondary" id="toggleListBtn" onclick="toggleContactList()">Ver lista</button>
+      <div style="display:flex; gap:8px;">
+        <button class="secondary" id="cleanEmptyBtn" onclick="limparContatosVazios()" style="display:none;">Limpar vazios</button>
+        <button class="secondary" id="toggleListBtn" onclick="toggleContactList()">Ver lista</button>
+      </div>
     </div>
+    <div class="status" id="cleanStatus"></div>
     <div class="contact-list" id="contactList" style="display:none;">
     </div>
   </section>
@@ -844,9 +848,12 @@ async function loadContacts(){
 function renderContacts(rows){
   const countEl = document.getElementById('contactCount');
   const list = document.getElementById('contactList');
+  const cleanBtn = document.getElementById('cleanEmptyBtn');
+  const vazios = rows.filter(r => !(r['Nomes'] || r['Nome'] || r.nome) && !(r['Telefone'] || r.telefone));
   countEl.textContent = rows.length === 0
     ? 'Nenhum contato cadastrado ainda.'
-    : `${rows.length} contato${rows.length > 1 ? 's' : ''} cadastrado${rows.length > 1 ? 's' : ''}.`;
+    : `${rows.length} contato${rows.length > 1 ? 's' : ''} cadastrado${rows.length > 1 ? 's' : ''}.` + (vazios.length > 0 ? ` (${vazios.length} vazios)` : '');
+  cleanBtn.style.display = vazios.length > 0 ? 'inline-block' : 'none';
   if(rows.length === 0){
     list.innerHTML = '';
     return;
@@ -857,6 +864,41 @@ function renderContacts(rows){
       <button class="del" onclick="deleteContact(${r.id})">Remover</button>
     </div>
   `).join('');
+}
+
+// Apaga de uma vez só todos os contatos que não têm nem nome nem telefone
+// preenchidos — útil pra limpar linhas em branco que sobraram de testes.
+async function limparContatosVazios(){
+  const cfg = getConfig();
+  if(!cfg.host || !cfg.token || !cfg.tableContacts) return;
+  const btn = document.getElementById('cleanEmptyBtn');
+  btn.disabled = true;
+  setStatus('cleanStatus', 'Procurando contatos vazios...', false);
+  try{
+    const res = await fetch(rowsUrl(cfg.tableContacts), { headers: apiHeaders() });
+    const data = await res.json();
+    const rows = data.results || [];
+    const vazios = rows.filter(r => !(r['Nomes'] || r['Nome'] || r.nome) && !(r['Telefone'] || r.telefone));
+    if(vazios.length === 0){
+      setStatus('cleanStatus', 'Nenhum contato vazio encontrado.', false);
+      btn.disabled = false;
+      return;
+    }
+    setStatus('cleanStatus', `Removendo ${vazios.length} contatos vazios...`, false);
+    let removidos = 0;
+    for(const r of vazios){
+      const del = await fetch(`${cfg.host}/api/database/rows/table/${cfg.tableContacts}/${r.id}/`, {
+        method: 'DELETE',
+        headers: apiHeaders()
+      });
+      if(del.ok) removidos++;
+    }
+    setStatus('cleanStatus', `${removidos} contatos vazios removidos.`, false);
+    loadContacts();
+  }catch(e){
+    setStatus('cleanStatus', 'Erro ao limpar contatos vazios.', true);
+  }
+  btn.disabled = false;
 }
 
 // Padroniza qualquer formato de telefone colado (+55(41)9732-1367, (41)9732-1254,
