@@ -909,6 +909,16 @@ async function addContact(){
   }
 }
 
+// Ajuda a decidir se um pedaço de texto colado é um telefone ou um nome
+function isPhoneLike(token){
+  const digits = String(token || '').replace(/\D/g, '');
+  return digits.length >= 8;
+}
+function isNameLike(token){
+  const digits = String(token || '').replace(/\D/g, '');
+  return digits.length < 8 && /[A-Za-zÀ-ÿ]/.test(token);
+}
+
 async function importBulk(){
   const cfg = getConfig();
   if(!cfg.host || !cfg.token || !cfg.tableContacts){
@@ -923,23 +933,28 @@ async function importBulk(){
   const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   const items = [];
   for(const line of lines){
-    let parts = line.split('\t');
-    if(parts.length < 2) parts = line.split(',');
-    let nome = '', telefoneRaw = '';
-    if(parts.length < 2){
-      // só uma coluna: decide se é telefone (maioria de dígitos) ou nome
-      const soDigitos = line.replace(/\D/g, '');
-      if(soDigitos.length >= 8 && soDigitos.length >= line.replace(/\s/g, '').length * 0.6){
-        telefoneRaw = line.trim();
-      } else {
-        nome = line.trim();
-      }
-    } else {
-      nome = parts[0].trim();
-      telefoneRaw = parts[1].trim();
+    // formato planilha: "Nome<TAB>Telefone"
+    if(line.includes('\t')){
+      const parts = line.split('\t');
+      const nome = (parts[0] || '').trim();
+      const telefoneRaw = (parts[1] || '').trim();
+      const telefone = telefoneRaw ? normalizePhone(telefoneRaw) : '';
+      if(nome || telefone) items.push({ 'Nome': nome, 'Telefone': telefone });
+      continue;
     }
-    const telefone = telefoneRaw ? normalizePhone(telefoneRaw) : '';
-    if(nome || telefone) items.push({ 'Nome': nome, 'Telefone': telefone });
+    const tokens = line.split(',').map(t => t.trim()).filter(t => t.length > 0);
+    // linha com exatamente 2 pedaços, sendo o primeiro nome e o segundo telefone: trata como par
+    if(tokens.length === 2 && isNameLike(tokens[0]) && isPhoneLike(tokens[1]) && !isPhoneLike(tokens[0])){
+      items.push({ 'Nome': tokens[0], 'Telefone': normalizePhone(tokens[1]) });
+      continue;
+    }
+    // qualquer outro caso: lista de telefones (e/ou nomes) soltos separados por vírgula,
+    // como o WhatsApp costuma exportar — cada pedaço vira um contato separado
+    for(const tok of tokens){
+      if(isPhoneLike(tok)) items.push({ 'Nome': '', 'Telefone': normalizePhone(tok) });
+      else if(isNameLike(tok)) items.push({ 'Nome': tok, 'Telefone': '' });
+      // pedaços que não parecem nem nome nem telefone (lixo de colagem) são ignorados
+    }
   }
   if(items.length === 0){
     setStatus('bulkStatus', 'Não consegui identificar nomes ou telefones nas linhas coladas.', true);
