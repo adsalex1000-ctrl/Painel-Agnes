@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AGNÊS — Painel de Disparo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3CradialGradient id='g' cx='35%25' cy='30%25'%3E%3Cstop offset='0%25' stop-color='%23ffe3fa'/%3E%3Cstop offset='40%25' stop-color='%23ff5fc4'/%3E%3Cstop offset='100%25' stop-color='%23b98cff'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='45' fill='url(%23g)'/%3E%3Ctext x='50' y='68' text-anchor='middle' font-family='Georgia, serif' font-weight='800' font-size='52' fill='%23160c24'%3EA%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Space+Grotesk:wght@400;500;600&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg: #0a0613;
@@ -37,10 +38,17 @@
   .wrap{ max-width: 720px; margin: 0 auto; }
 
   header{
-    margin-bottom: 32px;
+    margin: -32px -16px 32px;
+    padding: 18px 16px;
     display: flex;
     align-items: center;
     gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(10, 6, 19, 0.75);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--line);
   }
   .orb{
     width: 46px; height: 46px;
@@ -55,15 +63,21 @@
     50%{ transform: scale(1.08); box-shadow: 0 0 26px 6px rgba(255,95,196,0.75), 0 0 55px 14px rgba(185,140,255,0.4); }
   }
   header h1{
-    font-family: 'Orbitron', sans-serif;
-    font-size: 22px;
-    font-weight: 800;
+    font-family: 'Playfair Display', serif;
+    font-size: 30px;
+    font-weight: 900;
     margin: 0 0 2px;
-    letter-spacing: 2px;
-    background: linear-gradient(90deg, var(--cyan), var(--violet));
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--cyan), var(--violet), var(--cyan));
+    background-size: 220% auto;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    animation: gradientShift 12s ease-in-out infinite;
+  }
+  @keyframes gradientShift{
+    0%,100%{ background-position: 0% 50%; }
+    50%{ background-position: 100% 50%; }
   }
   header p{
     margin: 0;
@@ -115,9 +129,10 @@
     backdrop-filter: blur(14px);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: 22px;
-    margin-bottom: 20px;
+    padding: 26px 24px;
+    margin-bottom: 28px;
     overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.03) inset;
   }
   section.card::before{
     content:"";
@@ -139,23 +154,24 @@
     margin: 0 0 18px;
   }
 
-  .field{ margin-bottom: 14px; }
+  .field{ margin-bottom: 18px; }
   .field label{
     display:block;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     color: var(--muted);
-    margin-bottom: 6px;
+    margin-bottom: 9px;
+    font-weight: 600;
   }
-  input[type=text], input[type=tel], input[type=file], textarea{
+  input[type=text], input[type=tel], input[type=password], input[type=file], textarea, select{
     width: 100%;
     background: rgba(6, 9, 24, 0.6);
     border: 1px solid var(--line);
     color: var(--text);
-    border-radius: 9px;
-    padding: 11px 13px;
-    font-size: 14px;
+    border-radius: calc(var(--radius) - 4px);
+    padding: 13px 14px;
+    font-size: 15px;
     font-family: inherit;
     resize: vertical;
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -180,7 +196,7 @@
     font-weight: 600;
     font-size: 14px;
     padding: 11px 20px;
-    border-radius: 9px;
+    border-radius: calc(var(--radius) - 4px);
     cursor: pointer;
     letter-spacing: 0.3px;
     box-shadow: 0 0 16px rgba(255,95,196,0.25);
@@ -200,11 +216,132 @@
 
   .status{
     font-size: 13px;
-    margin-top: 10px;
-    min-height: 18px;
+    margin-top: 12px;
+    min-height: 0;
+    display: inline-block;
+    padding: 0;
   }
-  .status.ok{ color: var(--cyan); }
-  .status.err{ color: var(--danger); }
+  .status:empty{ display: none; }
+  .status.ok{
+    color: var(--cyan);
+    background: rgba(255,95,196,0.1);
+    border: 1px solid rgba(255,95,196,0.3);
+    padding: 6px 12px;
+    border-radius: 7px;
+  }
+  .status.err{
+    color: var(--danger);
+    background: rgba(255,93,122,0.1);
+    border: 1px solid rgba(255,93,122,0.3);
+    padding: 6px 12px;
+    border-radius: 7px;
+  }
+
+  /* Spinner de carregamento dentro de botões */
+  .spinner{
+    display: inline-block;
+    width: 13px; height: 13px;
+    border: 2px solid rgba(23,10,31,0.35);
+    border-top-color: #170a1f;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: -2px;
+    margin-right: 7px;
+  }
+  button.secondary .spinner{ border-color: rgba(245,234,255,0.3); border-top-color: var(--text); }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  /* Toast de notificação */
+  #toastContainer{
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    padding: 0 16px;
+    pointer-events: none;
+  }
+  .toast{
+    pointer-events: auto;
+    max-width: 420px;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    backdrop-filter: blur(10px);
+    animation: toastIn 0.25s ease-out;
+  }
+  .toast.toast-ok{ background: rgba(255,95,196,0.92); color: #170a1f; }
+  .toast.toast-err{ background: rgba(255,93,122,0.94); color: #2b0509; }
+  .toast.toast-out{ animation: toastOut 0.3s ease-in forwards; }
+  @keyframes toastIn{ from{ opacity:0; transform: translateY(12px); } to{ opacity:1; transform: translateY(0); } }
+  @keyframes toastOut{ to{ opacity:0; transform: translateY(-8px); } }
+
+  /* Cards de métricas do dashboard */
+  .metrics-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .metric-card{
+    background: rgba(6,9,24,0.5);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .metric-card .metric-label{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .metric-card .metric-value{
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--cyan), var(--violet));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .history-row{
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .history-row:last-child{ border-bottom: none; }
+  .history-row .muted{ color: var(--muted); font-size: 12px; }
+
+  /* Preview de mensagem estilo WhatsApp */
+  .wa-preview{
+    background: #0b1a12;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 6px;
+  }
+  .wa-bubble{
+    background: #005c4b;
+    color: #e9edef;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    max-width: 85%;
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .wa-bubble:empty{ display: none; }
 
   .contact-list{
     margin-top: 18px;
@@ -237,7 +374,9 @@
   nav.tabs{
     display: flex;
     gap: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
     flex-wrap: wrap;
   }
   .tab-btn{
@@ -311,6 +450,8 @@
   </div>
 </div>
 
+<div id="toastContainer"></div>
+
 <div class="wrap">
 
   <header>
@@ -362,7 +503,23 @@
   <div class="panel" id="panelEnvia">
 
   <section class="card">
-    <h2>Agnês envia</h2>
+    <h2>📈 Resumo</h2>
+    <p class="sub">Números atualizados direto do Baserow.</p>
+    <div class="metrics-grid" id="dashboardMetrics">
+      <div class="metric-card"><div class="metric-label">Contatos</div><div class="metric-value" id="metricTotal">—</div></div>
+      <div class="metric-card"><div class="metric-label">Ativos</div><div class="metric-value" id="metricAtivos">—</div></div>
+      <div class="metric-card"><div class="metric-label">Enviados hoje</div><div class="metric-value" id="metricHoje">—</div></div>
+      <div class="metric-card"><div class="metric-label">Taxa de resposta</div><div class="metric-value" id="metricTaxa">—</div></div>
+    </div>
+    <div class="status" id="dashboardStatus"></div>
+    <div id="historicoWrap" style="margin-top:16px; display:none;">
+      <div class="field" style="margin-bottom:8px;"><label>🕒 Últimos envios</label></div>
+      <div id="historicoList"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>💬 Agnês envia</h2>
     <p class="sub">4 envios em sequência, com intervalo entre eles: saudação, apresentação, pergunta e imagem.</p>
 
     <div class="field">
@@ -378,15 +535,15 @@
 
     <div class="field">
       <label>1. Saudação</label>
-      <textarea id="msgSaudacao" placeholder="Oi! Tudo bem?"></textarea>
+      <textarea id="msgSaudacao" placeholder="Oi! Tudo bem?" oninput="atualizarPreviewWA()"></textarea>
     </div>
     <div class="field">
       <label>2. Apresentação</label>
-      <textarea id="msgApresentacao" placeholder="Meu nome é..."></textarea>
+      <textarea id="msgApresentacao" placeholder="Meu nome é..." oninput="atualizarPreviewWA()"></textarea>
     </div>
     <div class="field">
       <label>3. Pergunta</label>
-      <textarea id="msgPergunta" placeholder="Você teria interesse em...?"></textarea>
+      <textarea id="msgPergunta" placeholder="Você teria interesse em...?" oninput="atualizarPreviewWA()"></textarea>
     </div>
 
     <div class="field">
@@ -399,12 +556,21 @@
       </div>
     </div>
 
-    <button onclick="saveMessages()">Salvar mensagens</button>
+    <div class="field">
+      <label>👀 Como vai ficar no WhatsApp</label>
+      <div class="wa-preview">
+        <div class="wa-bubble" id="waPreviewSaudacao"></div>
+        <div class="wa-bubble" id="waPreviewApresentacao"></div>
+        <div class="wa-bubble" id="waPreviewPergunta"></div>
+      </div>
+    </div>
+
+    <button id="btnSaveMessages" onclick="saveMessages()">Salvar mensagens</button>
     <div class="status" id="msgStatus"></div>
   </section>
 
   <section class="card">
-    <h2>Contatos</h2>
+    <h2>👥 Contatos</h2>
     <p class="sub">Adicione um contato, ou cole vários de uma vez copiando direto de uma planilha.</p>
 
     <div class="row">
@@ -417,7 +583,7 @@
         <input type="tel" id="contactPhone" placeholder="(41) 90000-0000">
       </div>
     </div>
-    <button onclick="addContact()">Adicionar contato</button>
+    <button id="btnAddContact" onclick="addContact()">Adicionar contato</button>
     <div class="status" id="contactStatus"></div>
 
     <button style="margin-top:18px;" onclick="toggleBulk()" id="bulkToggleBtn">Colar vários contatos de uma vez</button>
@@ -427,7 +593,7 @@
         <textarea id="bulkPaste" style="min-height:140px; font-family: monospace; font-size:13px;" placeholder="João Silva	41999990000
 Maria Souza	41988880000"></textarea>
       </div>
-      <button onclick="importBulk()">Importar todos</button>
+      <button id="btnImportBulk" onclick="importBulk()">Importar todos</button>
       <div class="status" id="bulkStatus"></div>
     </div>
 
@@ -447,7 +613,7 @@ Maria Souza	41988880000"></textarea>
 
   <div class="panel" id="panelConecta" style="display:none;">
     <section class="card">
-      <h2>Agnês conecta</h2>
+      <h2>🔗 Agnês conecta</h2>
       <p class="sub">Conecte o WhatsApp escaneando o QR Code gerado pela sua Evolution API.</p>
 
       <div class="config-lock" id="conectaLock">
@@ -486,7 +652,7 @@ Maria Souza	41988880000"></textarea>
 
   <div class="panel" id="panelEvolucao" style="display:none;">
     <section class="card">
-      <h2>Agnês evolução</h2>
+      <h2>📊 Agnês evolução</h2>
       <p class="sub">Acompanhamento da evolução das métricas, direto do dashboard.</p>
 
       <div class="field">
@@ -514,24 +680,49 @@ async function sha256(text){
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
+// ---------- Expiração de sessão: 30 minutos destravado, depois pede senha de novo ----------
+const SESSAO_DURACAO_MS = 30 * 60 * 1000;
+
+function marcarDestravado(chave){
+  sessionStorage.setItem(chave, '1');
+  sessionStorage.setItem(chave + '_em', Date.now().toString());
+}
+
+function estaDestravado(chave){
+  if(sessionStorage.getItem(chave) !== '1') return false;
+  const em = parseInt(sessionStorage.getItem(chave + '_em') || '0', 10);
+  if(Date.now() - em > SESSAO_DURACAO_MS){
+    sessionStorage.removeItem(chave);
+    sessionStorage.removeItem(chave + '_em');
+    return false;
+  }
+  return true;
+}
+
 async function checkPassword(){
   const val = document.getElementById('lockPassword').value;
   const hash = await sha256(val);
   if(hash === SENHA_HASH){
     document.getElementById('lockScreen').classList.add('hidden');
-    sessionStorage.setItem('agnes_unlocked', '1');
+    marcarDestravado('agnes_unlocked');
   } else {
     document.getElementById('lockError').textContent = 'Senha incorreta.';
   }
 }
 
-if(sessionStorage.getItem('agnes_unlocked') === '1'){
+if(estaDestravado('agnes_unlocked')){
   document.getElementById('lockScreen').classList.add('hidden');
 }
 
+// verifica a cada minuto se a sessão principal expirou; se sim, trava a tela de novo
+setInterval(() => {
+  if(!estaDestravado('agnes_unlocked')){
+    document.getElementById('lockScreen').classList.remove('hidden');
+  }
+}, 60 * 1000);
+
 // ---------- Segunda senha: protege a área de Configuração ----------
 const CONFIG_SENHA_HASH = "f06dec93035d1e5882e9f195a0257a9bab1411d8eee427d3c61e54c228d38901"; // senha padrão: "agnesadmin"
-let configUnlocked = sessionStorage.getItem('agnes_config_unlocked') === '1';
 
 function handleConfigSummaryClick(event){
   event.preventDefault();
@@ -542,7 +733,7 @@ function handleConfigSummaryClick(event){
     return;
   }
   details.setAttribute('open', '');
-  if(configUnlocked){
+  if(estaDestravado('agnes_config_unlocked')){
     document.getElementById('configLock').style.display = 'none';
     document.getElementById('configFields').style.display = 'grid';
   } else {
@@ -555,8 +746,7 @@ async function unlockConfig(){
   const val = document.getElementById('configPassInput').value;
   const hash = await sha256(val);
   if(hash === CONFIG_SENHA_HASH){
-    configUnlocked = true;
-    sessionStorage.setItem('agnes_config_unlocked', '1');
+    marcarDestravado('agnes_config_unlocked');
     document.getElementById('configLock').style.display = 'none';
     document.getElementById('configFields').style.display = 'grid';
     document.getElementById('configLockError').textContent = '';
@@ -566,10 +756,10 @@ async function unlockConfig(){
 }
 
 // ---------- Terceira senha: protege a área "Agnês conecta" ----------
-let conectaUnlocked = sessionStorage.getItem('agnes_conecta_unlocked') === '1';
+// Reaproveita a mesma senha "agnesadmin" (mesmo hash de CONFIG_SENHA_HASH)
 
 function initConectaLock(){
-  if(conectaUnlocked){
+  if(estaDestravado('agnes_conecta_unlocked')){
     document.getElementById('conectaLock').style.display = 'none';
     document.getElementById('conectaFields').style.display = 'block';
   }
@@ -579,8 +769,7 @@ async function unlockConecta(){
   const val = document.getElementById('conectaPassInput').value;
   const hash = await sha256(val);
   if(hash === CONFIG_SENHA_HASH){
-    conectaUnlocked = true;
-    sessionStorage.setItem('agnes_conecta_unlocked', '1');
+    marcarDestravado('agnes_conecta_unlocked');
     document.getElementById('conectaLock').style.display = 'none';
     document.getElementById('conectaFields').style.display = 'block';
     document.getElementById('conectaLockError').textContent = '';
@@ -605,7 +794,7 @@ function toggleBulk(){
 function abrirConfigDoAvisoVazio(){
   const details = document.getElementById('configDetails');
   details.setAttribute('open', '');
-  if(configUnlocked){
+  if(estaDestravado('agnes_config_unlocked')){
     document.getElementById('configLock').style.display = 'none';
     document.getElementById('configFields').style.display = 'grid';
   } else {
@@ -641,6 +830,7 @@ function saveConfig(){
   document.querySelector('details.config').removeAttribute('open');
   loadMessages();
   loadContacts();
+  loadDashboard();
 }
 
 function apiHeaders(){
@@ -788,6 +978,14 @@ async function loadMessages(){
   }catch(e){
     setStatus('msgStatus', 'Não foi possível carregar as mensagens salvas.', true);
   }
+  atualizarPreviewWA();
+}
+
+// Atualiza o preview visual estilo WhatsApp em tempo real conforme o usuário digita
+function atualizarPreviewWA(){
+  document.getElementById('waPreviewSaudacao').textContent = document.getElementById('msgSaudacao').value;
+  document.getElementById('waPreviewApresentacao').textContent = document.getElementById('msgApresentacao').value;
+  document.getElementById('waPreviewPergunta').textContent = document.getElementById('msgPergunta').value;
 }
 
 // chamado quando o usuário troca a variação no seletor
@@ -802,12 +1000,14 @@ async function saveMessages(){
     return;
   }
   const variant = document.getElementById('msgVariant').value || 'MENSAGEM 1';
+  setBtnLoading('btnSaveMessages', true, 'Salvando...');
   let imageField = existingImage ? [existingImage] : [];
   try{
     const img = await uploadImageIfNeeded();
     if(img) imageField = [img];
   }catch(e){
     setStatus('msgStatus', 'Erro ao enviar a imagem. Verifique se a tabela tem um campo de arquivo chamado "Foto".', true);
+    setBtnLoading('btnSaveMessages', false);
     return;
   }
   const payload = {
@@ -842,6 +1042,7 @@ async function saveMessages(){
   }catch(e){
     setStatus('msgStatus', 'Erro de conexão ao salvar.', true);
   }
+  setBtnLoading('btnSaveMessages', false);
 }
 
 // ---------- Contatos ----------
@@ -898,9 +1099,10 @@ function renderContacts(rows){
   const list = document.getElementById('contactList');
   const cleanBtn = document.getElementById('cleanEmptyBtn');
   const vazios = rows.filter(r => !(r['Nomes'] || r['Nome'] || r.nome) && !(r['Telefone'] || r.telefone));
+  const ativos = rows.filter(r => r['Ativo'] === true || r['Active'] === true).length;
   countEl.textContent = rows.length === 0
     ? 'Nenhum contato cadastrado ainda.'
-    : `${rows.length} contato${rows.length > 1 ? 's' : ''} cadastrado${rows.length > 1 ? 's' : ''}.` + (vazios.length > 0 ? ` (${vazios.length} vazios)` : '');
+    : `${rows.length} contato${rows.length > 1 ? 's' : ''} cadastrado${rows.length > 1 ? 's' : ''} — ${ativos} ativo${ativos !== 1 ? 's' : ''}.` + (vazios.length > 0 ? ` (${vazios.length} vazios)` : '');
   cleanBtn.style.display = vazios.length > 0 ? 'inline-block' : 'none';
   if(rows.length === 0){
     list.innerHTML = '';
@@ -919,34 +1121,36 @@ function renderContacts(rows){
 async function limparContatosVazios(){
   const cfg = getConfig();
   if(!cfg.host || !cfg.token || !cfg.tableContacts) return;
-  const btn = document.getElementById('cleanEmptyBtn');
-  btn.disabled = true;
   setStatus('cleanStatus', 'Procurando contatos vazios em todas as páginas...', false);
+  setBtnLoading('cleanEmptyBtn', true, 'Buscando...');
   try{
     const rows = await fetchAllRows(cfg.tableContacts);
     const vazios = rows.filter(r => !(r['Nomes'] || r['Nome'] || r.nome) && !(r['Telefone'] || r.telefone));
     if(vazios.length === 0){
       setStatus('cleanStatus', 'Nenhum contato vazio encontrado.', false);
-      btn.disabled = false;
+      setBtnLoading('cleanEmptyBtn', false);
+      return;
+    }
+    if(!confirm(`Remover ${vazios.length} contatos vazios? Essa ação não pode ser desfeita.`)){
+      setBtnLoading('cleanEmptyBtn', false);
       return;
     }
     let removidos = 0;
     for(const r of vazios){
+      setBtnLoading('cleanEmptyBtn', true, `Removendo ${removidos}/${vazios.length}`);
       const del = await fetch(`${cfg.host}/api/database/rows/table/${cfg.tableContacts}/${r.id}/`, {
         method: 'DELETE',
         headers: apiHeaders()
       });
       if(del.ok) removidos++;
-      if(removidos % 20 === 0){
-        setStatus('cleanStatus', `Removendo... ${removidos}/${vazios.length}`, false);
-      }
     }
     setStatus('cleanStatus', `${removidos} contatos vazios removidos.`, false);
     loadContacts();
+    loadDashboard();
   }catch(e){
     setStatus('cleanStatus', 'Erro ao limpar contatos vazios.', true);
   }
-  btn.disabled = false;
+  setBtnLoading('cleanEmptyBtn', false);
 }
 
 // Padroniza qualquer formato de telefone colado (+55(41)9732-1367, (41)9732-1254,
@@ -980,6 +1184,7 @@ async function addContact(){
     setStatus('contactStatus', 'Preencha ao menos o nome ou o telefone.', true);
     return;
   }
+  setBtnLoading('btnAddContact', true, 'Adicionando...');
   try{
     const res = await fetch(rowsUrl(cfg.tableContacts), {
       method: 'POST',
@@ -991,12 +1196,14 @@ async function addContact(){
       document.getElementById('contactPhone').value = '';
       setStatus('contactStatus', 'Contato adicionado.', false);
       loadContacts();
+      loadDashboard();
     } else {
       setStatus('contactStatus', 'Erro ao adicionar. Confira os nomes das colunas na tabela.', true);
     }
   }catch(e){
     setStatus('contactStatus', 'Erro de conexão ao adicionar.', true);
   }
+  setBtnLoading('btnAddContact', false);
 }
 
 // Ajuda a decidir se um pedaço de texto colado é um telefone ou um nome
@@ -1070,6 +1277,7 @@ async function importBulk(){
     setStatus('bulkStatus', 'Não consegui identificar nomes ou telefones nas linhas coladas.', true);
     return;
   }
+  setBtnLoading('btnImportBulk', true, 'Importando...');
   // o Baserow limita quantas linhas aceita por chamada — divide em blocos de 100
   const BLOCO = 100;
   const blocos = [];
@@ -1079,6 +1287,7 @@ async function importBulk(){
   try{
     let totalImportado = 0;
     for(const bloco of blocos){
+      setBtnLoading('btnImportBulk', true, `Importando ${totalImportado}/${items.length}`);
       const res = await fetch(`${cfg.host}/api/database/rows/table/${cfg.tableContacts}/batch/?user_field_names=true`, {
         method: 'POST',
         headers: apiHeaders(),
@@ -1090,34 +1299,72 @@ async function importBulk(){
         const detail = await res.text().catch(() => '');
         setStatus('bulkStatus', `Importados ${totalImportado} de ${items.length} antes de um erro: ${detail.slice(0,180)}`, true);
         loadContacts();
+        loadDashboard();
+        setBtnLoading('btnImportBulk', false);
         return;
       }
     }
     document.getElementById('bulkPaste').value = '';
     setStatus('bulkStatus', `${totalImportado} contatos importados.`, false);
     loadContacts();
+    loadDashboard();
+    setBtnLoading('btnImportBulk', false);
     return;
   }catch(e){
     setStatus('bulkStatus', 'Erro de conexão ao importar.', true);
   }
+  setBtnLoading('btnImportBulk', false);
 }
 
 async function deleteContact(id){
+  if(!confirm('Remover este contato? Essa ação não pode ser desfeita.')) return;
   const cfg = getConfig();
   try{
     const res = await fetch(`${cfg.host}/api/database/rows/table/${cfg.tableContacts}/${id}/`, {
       method: 'DELETE',
       headers: apiHeaders()
     });
-    if(res.ok){ loadContacts(); }
+    if(res.ok){
+      showToast('Contato removido.', false);
+      loadContacts();
+      loadDashboard();
+    }
   }catch(e){}
+}
+
+function showToast(msg, isErr){
+  const container = document.getElementById('toastContainer');
+  if(!container) return;
+  const el = document.createElement('div');
+  el.className = 'toast ' + (isErr ? 'toast-err' : 'toast-ok');
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('toast-out');
+    setTimeout(() => el.remove(), 300);
+  }, 3200);
 }
 
 function setStatus(elId, msg, isErr){
   const el = document.getElementById(elId);
   el.textContent = msg;
   el.className = 'status ' + (isErr ? 'err' : 'ok');
+  if(msg) showToast(msg, isErr);
   setTimeout(() => { el.textContent = ''; }, 4000);
+}
+
+// mostra um spinner dentro de um botão enquanto uma ação assíncrona roda
+function setBtnLoading(btnId, loading, loadingText, originalText){
+  const btn = document.getElementById(btnId);
+  if(!btn) return;
+  if(loading){
+    btn.dataset.originalText = originalText || btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span>${loadingText || 'Carregando...'}`;
+  } else {
+    btn.disabled = false;
+    btn.textContent = btn.dataset.originalText || btn.textContent;
+  }
 }
 
 function escapeHtml(str){
@@ -1227,12 +1474,68 @@ function loadLookerIntoInputs(){
   }
 }
 
+// ---------- Dashboard resumido + histórico de envios ----------
+// Lê a tabela de Contatos e calcula: total, ativos, enviados hoje, taxa de resposta,
+// e monta uma listinha dos envios mais recentes usando a coluna "Data de Envio".
+function parseDataBR(str){
+  // formato esperado: "27/07/2026 18:59:09"
+  if(!str) return null;
+  const m = String(str).match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if(!m) return null;
+  return { dia: m[1], mes: m[2], ano: m[3], raw: str };
+}
+
+async function loadDashboard(){
+  const cfg = getConfig();
+  if(!cfg.host || !cfg.token || !cfg.tableContacts) return;
+  setStatus('dashboardStatus', 'Calculando métricas...', false);
+  try{
+    const rows = await fetchAllRows(cfg.tableContacts);
+    const total = rows.length;
+    const ativos = rows.filter(r => r['Ativo'] === true || r['Active'] === true).length;
+
+    const hoje = new Date();
+    const hojeStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
+
+    const comEnvio = rows
+      .map(r => ({ row: r, envio: parseDataBR(r['Data de Envio']), interacao: parseDataBR(r['Data de Interação']) }))
+      .filter(x => x.envio);
+
+    const enviadosHoje = comEnvio.filter(x => x.envio.raw.startsWith(hojeStr)).length;
+    const comResposta = comEnvio.filter(x => x.interacao).length;
+    const taxa = comEnvio.length > 0 ? Math.round((comResposta / comEnvio.length) * 100) : 0;
+
+    document.getElementById('metricTotal').textContent = total;
+    document.getElementById('metricAtivos').textContent = ativos;
+    document.getElementById('metricHoje').textContent = enviadosHoje;
+    document.getElementById('metricTaxa').textContent = comEnvio.length > 0 ? `${taxa}%` : '—';
+
+    // histórico: os 10 envios mais recentes (ordenado pela data/hora, mais novo primeiro)
+    const ordenado = comEnvio.slice().sort((a, b) => (a.envio.raw < b.envio.raw ? 1 : -1)).slice(0, 10);
+    const wrap = document.getElementById('historicoWrap');
+    const list = document.getElementById('historicoList');
+    if(ordenado.length > 0){
+      wrap.style.display = 'block';
+      list.innerHTML = ordenado.map(x => {
+        const tel = escapeHtml(x.row['Telefone'] || x.row.telefone || '');
+        const respondeu = x.interacao ? '✅ respondeu' : '⏳ sem resposta ainda';
+        return `<div class="history-row"><span>${tel}</span><span class="muted">${escapeHtml(x.envio.raw)} · ${respondeu}</span></div>`;
+      }).join('');
+    } else {
+      wrap.style.display = 'none';
+    }
+    document.getElementById('dashboardStatus').textContent = '';
+  }catch(e){
+    setStatus('dashboardStatus', 'Não foi possível calcular as métricas.', true);
+  }
+}
+
 // ---------- Init ----------
 loadConfigIntoInputs();
 loadEvoConfigIntoInputs();
 loadLookerIntoInputs();
 initConectaLock();
-if(getConfig().host){ loadMessages(); loadContacts(); }
+if(getConfig().host){ loadMessages(); loadContacts(); loadDashboard(); }
 else {
   document.getElementById('contactCount').innerHTML = '<button onclick="abrirConfigDoAvisoVazio()">Configurar conexão</button>';
   document.getElementById('toggleListBtn').style.display = 'none';
