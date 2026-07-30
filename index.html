@@ -424,9 +424,10 @@
   }
   .lock-box .orb{ width: 72px; height: 72px; margin: 0 auto 22px; }
   .lock-box h2{
-    font-family: 'Orbitron', sans-serif;
-    font-size: 30px;
-    letter-spacing: 3px;
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: 34px;
+    letter-spacing: 1px;
     margin: 0 0 10px;
     background: linear-gradient(90deg, var(--cyan), var(--violet));
     -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -512,8 +513,11 @@
       <div class="metric-card"><div class="metric-label">Taxa de resposta</div><div class="metric-value" id="metricTaxa">—</div></div>
     </div>
     <div class="status" id="dashboardStatus"></div>
+    <div style="margin-top:16px;">
+      <button class="secondary" id="toggleHistoricoBtn" onclick="toggleHistorico()" style="display:none;">Ver envios de hoje</button>
+    </div>
     <div id="historicoWrap" style="margin-top:16px; display:none;">
-      <div class="field" style="margin-bottom:8px;"><label>🕒 Últimos envios</label></div>
+      <div class="field" style="margin-bottom:8px;"><label>🕒 Envios de hoje</label></div>
       <div id="historicoList"></div>
     </div>
   </section>
@@ -1501,7 +1505,9 @@ async function loadDashboard(){
       .map(r => ({ row: r, envio: parseDataBR(r['Data de Envio']), interacao: parseDataBR(r['Data de Interação']) }))
       .filter(x => x.envio);
 
-    const enviadosHoje = comEnvio.filter(x => x.envio.raw.startsWith(hojeStr)).length;
+    // só considera os envios de HOJE — atualiza sozinho quando o dia vira
+    const envioHojeLista = comEnvio.filter(x => x.envio.raw.startsWith(hojeStr));
+    const enviadosHoje = envioHojeLista.length;
     const comResposta = comEnvio.filter(x => x.interacao).length;
     const taxa = comEnvio.length > 0 ? Math.round((comResposta / comEnvio.length) * 100) : 0;
 
@@ -1510,24 +1516,47 @@ async function loadDashboard(){
     document.getElementById('metricHoje').textContent = enviadosHoje;
     document.getElementById('metricTaxa').textContent = comEnvio.length > 0 ? `${taxa}%` : '—';
 
-    // histórico: os 10 envios mais recentes (ordenado pela data/hora, mais novo primeiro)
-    const ordenado = comEnvio.slice().sort((a, b) => (a.envio.raw < b.envio.raw ? 1 : -1)).slice(0, 10);
-    const wrap = document.getElementById('historicoWrap');
-    const list = document.getElementById('historicoList');
-    if(ordenado.length > 0){
-      wrap.style.display = 'block';
-      list.innerHTML = ordenado.map(x => {
-        const tel = escapeHtml(x.row['Telefone'] || x.row.telefone || '');
-        const respondeu = x.interacao ? '✅ respondeu' : '⏳ sem resposta ainda';
-        return `<div class="history-row"><span>${tel}</span><span class="muted">${escapeHtml(x.envio.raw)} · ${respondeu}</span></div>`;
-      }).join('');
+    // histórico: só os envios de hoje, mais recentes primeiro — guarda pra montar
+    // a lista só quando o usuário clicar em "Ver envios de hoje" (evita renderizar
+    // uma lista gigante à toa quando a base de contatos crescer)
+    ultimoHistoricoHoje = envioHojeLista.slice().sort((a, b) => (a.envio.raw < b.envio.raw ? 1 : -1));
+    const toggleBtn = document.getElementById('toggleHistoricoBtn');
+    if(ultimoHistoricoHoje.length > 0){
+      toggleBtn.style.display = 'inline-block';
+      toggleBtn.textContent = `Ver envios de hoje (${ultimoHistoricoHoje.length})`;
     } else {
-      wrap.style.display = 'none';
+      toggleBtn.style.display = 'none';
+      document.getElementById('historicoWrap').style.display = 'none';
+    }
+    if(document.getElementById('historicoWrap').style.display === 'block'){
+      renderHistorico();
     }
     document.getElementById('dashboardStatus').textContent = '';
   }catch(e){
     setStatus('dashboardStatus', 'Não foi possível calcular as métricas.', true);
   }
+}
+
+let ultimoHistoricoHoje = [];
+
+function renderHistorico(){
+  const list = document.getElementById('historicoList');
+  list.innerHTML = ultimoHistoricoHoje.map(x => {
+    const tel = escapeHtml(x.row['Telefone'] || x.row.telefone || '');
+    const respondeu = x.interacao ? '✅ respondeu' : '⏳ sem resposta ainda';
+    return `<div class="history-row"><span>${tel}</span><span class="muted">${escapeHtml(x.envio.raw)} · ${respondeu}</span></div>`;
+  }).join('');
+}
+
+function toggleHistorico(){
+  const wrap = document.getElementById('historicoWrap');
+  const btn = document.getElementById('toggleHistoricoBtn');
+  const abrindo = wrap.style.display !== 'block';
+  wrap.style.display = abrindo ? 'block' : 'none';
+  if(abrindo) renderHistorico();
+  btn.textContent = abrindo
+    ? 'Ocultar envios de hoje'
+    : `Ver envios de hoje (${ultimoHistoricoHoje.length})`;
 }
 
 // ---------- Init ----------
